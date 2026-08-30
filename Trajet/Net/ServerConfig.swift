@@ -7,6 +7,10 @@ import Observation
 /// instantánea, y por Tailscale, que funciona desde cualquier sitio. La app
 /// no pregunta cuál usar: prueba, se queda con la que responde y la recuerda.
 /// En un vestíbulo de metro esa decisión no se le puede pasar al usuario.
+///
+/// Las propiedades son almacenadas y sin `didSet` a propósito: el macro
+/// `@Observable` reescribe los accesores, y mezclarlo con observadores de
+/// propiedad es pedir problemas. Aquí se persiste llamando a `persist()`.
 @MainActor
 @Observable
 final class ServerConfig {
@@ -22,25 +26,25 @@ final class ServerConfig {
         static let preferred = "server.preferred"
     }
 
-    var lan: String {
-        didSet { UserDefaults.standard.set(lan, forKey: Key.lan) }
-    }
-
-    var tailscale: String {
-        didSet { UserDefaults.standard.set(tailscale, forKey: Key.tailscale) }
-    }
+    var lan: String
+    var tailscale: String
 
     /// La última que funcionó. Se prueba primero para no pagar el tiempo de
     /// espera de la que está caída en cada refresco.
-    private(set) var preferred: String? {
-        didSet { UserDefaults.standard.set(preferred, forKey: Key.preferred) }
-    }
+    private(set) var preferred: String?
 
     init() {
         let d = UserDefaults.standard
         lan = d.string(forKey: Key.lan) ?? Self.defaultLAN
         tailscale = d.string(forKey: Key.tailscale) ?? Self.defaultTailscale
         preferred = d.string(forKey: Key.preferred)
+    }
+
+    /// Guarda las direcciones que se escriben en Ajustes.
+    func persist() {
+        let d = UserDefaults.standard
+        d.set(lan, forKey: Key.lan)
+        d.set(tailscale, forKey: Key.tailscale)
     }
 
     /// Las direcciones a probar, en orden: primero la que funcionó la última
@@ -57,9 +61,10 @@ final class ServerConfig {
     func remember(_ host: String) {
         guard preferred != host else { return }
         preferred = host
+        UserDefaults.standard.set(host, forKey: Key.preferred)
     }
 
-    /// Nombre corto para el pie de Ajustes: «red de casa» o «Tailscale».
+    /// Nombre corto para Ajustes: «red de casa» o «Tailscale».
     func label(for host: String) -> String {
         if host == lan { return "red de casa" }
         if host == tailscale { return "Tailscale" }
@@ -70,5 +75,7 @@ final class ServerConfig {
         lan = Self.defaultLAN
         tailscale = Self.defaultTailscale
         preferred = nil
+        persist()
+        UserDefaults.standard.removeObject(forKey: Key.preferred)
     }
 }

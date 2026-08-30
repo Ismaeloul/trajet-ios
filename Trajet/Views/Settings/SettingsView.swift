@@ -89,6 +89,10 @@ struct SettingsView: View {
                 }
             }
             .task { await check() }
+            // Las direcciones se guardan según se escriben, para que no haya
+            // que acordarse de darle a nada.
+            .onChange(of: model.config.lan) { _, _ in model.config.persist() }
+            .onChange(of: model.config.tailscale) { _, _ in model.config.persist() }
         }
         .preferredColorScheme(.dark)
     }
