@@ -1,0 +1,40 @@
+# El .xcodeproj no se versiona: lo genera XcodeGen desde este fichero, tanto
+# en CI como en un Mac. Asi no hay pbxproj escrito a mano que se pudra.
+name: Trajet
+options:
+  bundleIdPrefix: com.ismaeloul
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    TARGETED_DEVICE_FAMILY: "1"          # solo iPhone
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+
+targets:
+  Trajet:
+    type: application
+    platform: iOS
+    sources:
+      - path: Trajet
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet
+        PRODUCT_NAME: Trajet
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Trajet/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Se firma FUERA, con IPA Station y un Apple ID gratuito.
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO

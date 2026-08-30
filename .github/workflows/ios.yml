@@ -1,0 +1,73 @@
+# Compila la app en un runner macOS y deja el .ipa SIN FIRMAR como artifact.
+# La firma la pone IPA Station en el Umbrel con el Apple ID gratuito, que es
+# lo unico que se puede hacer sin cuenta de desarrollador de pago.
+name: IPA
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["README.md", "docs/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ipa:
+    # iOS 26 necesita el SDK de Xcode 26, que solo trae la imagen de Tahoe.
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Elegir el Xcode mas nuevo de la imagen
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Usando $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+          xcodebuild -showsdks | grep -i iphoneos
+
+      - name: Generar el proyecto Xcode
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+
+      - name: Compilar (Release, sin firmar)
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Trajet.xcodeproj \
+            -scheme Trajet \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Empaquetar el .ipa
+        run: |
+          set -euo pipefail
+          app="build/Build/Products/Release-iphoneos/Trajet.app"
+          test -d "$app" || { echo "no se ha generado $app"; exit 1; }
+          rm -rf Payload && mkdir Payload
+          cp -R "$app" Payload/
+          # Un .ipa es un zip con la app dentro de Payload/, nada mas.
+          zip -qry "Trajet.ipa" Payload
+          unzip -l Trajet.ipa | tail -3
+          ls -lh Trajet.ipa
+
+      - name: Subir el artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-ipa-${{ github.run_number }}
+          path: Trajet.ipa
+          if-no-files-found: error
+          retention-days: 30

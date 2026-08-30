@@ -1,0 +1,10 @@
+# Xcode lo genera XcodeGen a partir de project.yml: no se versiona.
+Trajet.xcodeproj/
+build/
+DerivedData/
+*.ipa
+Payload/
+
+.DS_Store
+xcuserdata/
+*.xcuserstate
