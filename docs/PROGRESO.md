@@ -13,10 +13,11 @@ desde aquí.
 
 ## Fases
 
-- [ ] FASE 0 — Recuperar el código y analizar
+- [x] FASE 0 — Recuperar el código y analizar (Parada 1 en `docs/PARADAS.md`)
   - [x] 0.1 Código del servidor recuperado del NAS (`~/trajet`, solo lectura) → `trajet-server` (privado), commit inicial = producción 0.3.0
   - [ ] 0.1 Copia de `trajet.db` → **bloqueada** (ver `docs/pendiente.md`)
-  - [ ] 0.2 Análisis (`reglas.md`, `api.md`, `openapi.yaml`, `servidor.md`, `datos-idfm.md`, `arquitectura.md`)
+  - [x] 0.2 Análisis (`reglas.md`, `api.md`, `openapi.yaml`, `servidor.md`, `datos-idfm.md`, `arquitectura.md`)
+  - [x] Contrato v2 congelado: `docs/openapi.yaml` 0.4.0
 - [ ] FASE 1 — Servidor
 - [ ] FASE 2 — Sistema de diseño «Cristal» + Live Activity y widgets
 - [ ] FASE 3 — App iOS
@@ -27,3 +28,4 @@ desde aquí.
 
 - 2026-09-24 00:20 — Arranque. Código del servidor encontrado en el NAS; la API
   coincide con la desplegada. Repo `trajet-server` creado.
+- 2026-09-24 01:15 — FASE 0 cerrada. Contrato 0.4.0 congelado. Empieza la FASE 1.
