@@ -74,3 +74,73 @@ al final de cada sección.
   (`TRAJET_ADMIN_PEERS=auto`).
 - Umbrel da a cada app un secreto estable `APP_SEED` (derivado de la semilla
   del Umbrel); es el que se usará para cifrar la clave de PRIM en reposo.
+
+---
+
+## FASE 1 — Servidor
+
+### D1.1 · Se mantiene Python + FastAPI + SQLite
+- El código de la 0.3.0 es bueno, pequeño y está medido contra la API real.
+  Cambiar de stack solo añadía riesgo. Dependencias nuevas, justificadas en
+  `docs/servidor-v2.md`: `cryptography` (AES-GCM; la estándar no trae
+  cifrado autenticado) y `segno` (QR en SVG sin dependencias, para que el
+  panel funcione sin internet).
+
+### D1.2 · Contrato primero
+- `docs/openapi.yaml` 0.4.0 se congeló antes de repartir el trabajo. Los tests
+  del servidor validan cada respuesta de `/api/v1` y `/api/admin` contra él
+  (copia en `trajet-server/tests/contract/`). La 0.3.0 se conserva con el
+  mismo `openapi.json` que producción (hay un test que lo compara).
+
+### D1.3 · Migraciones
+- `PRAGMA user_version`. La migración 1 es el esquema 0.3.0 idempotente, así
+  que una BD de producción queda en v1 sin tocar un dato; la 2 solo añade.
+  Copia `trajet.db.bak-v<N>` antes de migrar. Si una migración falla, rollback
+  y el servidor no arranca con un esquema a medias.
+- El acierto de la previsión de vía pasa a contarse **por tren** en una tabla
+  nueva (`platform_score_v2`); la vieja se conserva intacta como histórico.
+
+### D1.4 · Seguridad
+- `/api/v1/*` fuera del login de Umbrel (lista blanca) pero con token
+  obligatorio; panel, `/api/admin` y la API 0.3.0 detrás del login.
+- Token `trj_` + 256 bits; en la BD solo su SHA-256; `hmac.compare_digest`.
+- `X-Forwarded-For`: se usa el **último** valor, y solo si la conexión viene
+  del proxy. El primero lo escribe el cliente y podría falsearlo para
+  saltarse el límite de intentos del emparejamiento.
+- El panel, además del login de Umbrel, comprueba que la conexión venga del
+  proxy (`TRAJET_ADMIN_PEERS=auto`): en la red Docker de Umbrel cualquier otra
+  app podría llegar a `web:8000` saltándose el login.
+- En el `docker compose` de desarrollo, con `auto`, un navegador de la LAN
+  que entre directo por el puerto recibe 403: se relaja con
+  `TRAJET_ADMIN_PEERS=any` (solo en local).
+- Los códigos de un solo uso anulan el anterior; tras 10 fallos seguidos se
+  anulan todos; la respuesta es la misma para código malo, caducado o usado.
+- Campos extra en `POST /api/v1/pair` se ignoran (no 400) para que una app
+  más nueva pueda emparejar con un servidor más viejo.
+
+### D1.5 · Cuota
+- Se cuenta cada respuesta HTTP real por endpoint y día UTC, con la clave en
+  uso (cambiar de clave = contador nuevo). Manda lo más pesimista entre el
+  contador propio y la cabecera de PRIM.
+- Degradación: warn ×2 el TTL, critical ×4, exhausted mínimo 600 s; sin
+  cuota, no se llama y se sirve la caché. El refresco sugerido a la app sale
+  solo de los endpoints del tablero (que el planificador gaste navitia no
+  frena el tablero).
+- Un 429 solo marca el día como agotado si la cabecera dice 0; si no, es un
+  límite por segundo y se pausa.
+- Validar la clave usa `navitia/places?count=1`: `/coverage` no existe en
+  PRIM (404, medido con la clave de pruebas).
+
+### D1.6 · Clave PRIM
+- Se guarda solo si al menos una API responde 200 y ninguna 401/403.
+- `/data/secrets/prim-key.json` (0600, carpeta 0700), AES-256-GCM con clave
+  derivada por HKDF de `APP_SEED`. Sin `APP_SEED`, clave maestra local en
+  `/data/secrets/master.key` y el panel lo avisa.
+
+### D1.7 · Mapa
+- Nunca se descarga un dataset entero: todo con `where`/`select` por línea y
+  estación (el de trazados entero no cabría en 384 MB). Pico medido: 3,4 MB.
+- Los ficheros del GTFS (`pathways`, `transfers`) se leen por HTTP Range del
+  zip, sin bajarlo.
+- No hay caminos a pie entre andenes en los datos abiertos: se da el tiempo
+  mínimo de transbordo, no un trazado inventado.
