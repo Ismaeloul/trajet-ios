@@ -5,7 +5,7 @@ name: IPA
 
 on:
   push:
-    branches: [main]
+    branches: [main, rewrite-v2]
     paths-ignore: ["README.md", "docs/**"]
   workflow_dispatch:
 
@@ -28,7 +28,11 @@ jobs:
           echo "Usando $latest"
           sudo xcode-select -s "$latest"
           xcodebuild -version
-          xcodebuild -showsdks | grep -i iphoneos
+          xcodebuild -showsdks
+          ls -d /Applications/Xcode*.app
+          sw_vers
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep -i -E "iphone (se|16|17)" || true
 
       - name: Generar el proyecto Xcode
         run: |
