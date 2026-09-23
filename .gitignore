@@ -8,3 +8,13 @@ Payload/
 .DS_Store
 xcuserdata/
 *.xcuserstate
+
+.claude/settings.local.json
+
+# Repos hermanos que viven dentro de esta carpeta de trabajo pero tienen su
+# propio git (ver docs/decisiones.md).
+trajet-server/
+umbrel-app-store/
+
+# Copias locales de datos de produccion (p. ej. trajet.db): nunca a git.
+.local/
