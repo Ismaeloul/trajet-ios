@@ -155,7 +155,7 @@ window.TrajetMap = (() => {
       ${o.showTransfer ? `<path d="${d(G.transfer.path)}" fill="none" stroke="#${G.transfer.color}" stroke-width="${o.routeWidth - 1}" stroke-linecap="round"/>` : ''}
       <path d="${d(G.walk)}" fill="none" stroke="${o.walkColor || (o.theme === 'dark' ? '#e6e6ea' : '#2a2a2e')}" stroke-width="3" stroke-dasharray="1 6" stroke-linecap="round"/>
       ${stops}
-      <text x="${W - 8}" y="${H - 6}" text-anchor="end" font-size="9" fill="${t.text}" font-family="system-ui">mapa sin conexión · trazado esquemático</text>
+      ${o.forceSVG ? '' : `<text x="${W - 8}" y="${H - 6}" text-anchor="end" font-size="9" fill="${t.text}" font-family="system-ui">mapa sin conexión · trazado esquemático</text>`}
     </svg>
     <div class="map-me" style="--me:${o.meColor};position:absolute;left:${mx - 9}px;top:${my - 9}px"></div>`;
     container.innerHTML = svg;

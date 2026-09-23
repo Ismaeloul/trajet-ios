@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajet · laboratorio de diseño</title>
+<link rel="stylesheet" href="shared/base.css">
+<style>
+  /* La galería: cinco iPhones interactivos, el mismo panel de escenarios para todos. */
+  body { margin: 0; background: #e9e9ee; color: #1c1c1e; font-family: -apple-system, "Segoe UI", Inter, system-ui, sans-serif; }
+  .g-lab { display: grid; grid-template-columns: 1fr 320px; min-height: 100vh; }
+  .g-main { padding: 20px 24px 40px; overflow: auto; }
+  .g-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .g-head h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -.01em; }
+  .g-head p { color: #6e6e73; font-size: .9rem; }
+  .g-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .g-tools label { font-size: .8rem; color: #6e6e73; margin-right: 4px; }
+  .g-tools select, .g-tools button { font: inherit; font-size: .85rem; padding: 6px 10px; border-radius: 9px; border: 1px solid #d7d7de; background: #fff; cursor: pointer; }
+  .g-tools button.is-on { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
+  .g-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px 18px; align-items: start; }
+  .g-card { display: flex; flex-direction: column; gap: 10px; }
+  .g-phone { --pw: 390px; --ph: 844px; --bezel: 10px; --radius: 50px; width: calc(var(--pw) + var(--bezel) * 2); height: calc(var(--ph) + var(--bezel) * 2); padding: var(--bezel); background: #0b0b0d; border-radius: var(--radius); box-shadow: 0 24px 50px rgba(0,0,0,.28), 0 0 0 2px #2a2a2e; zoom: var(--zoom, .72); position: relative; flex: none; }
+  .g-phone iframe { width: var(--pw); height: var(--ph); border: 0; border-radius: calc(var(--radius) - var(--bezel)); background: #000; display: block; }
+  .g-meta { display: flex; flex-direction: column; gap: 6px; max-width: 300px; }
+  .g-meta h2 { font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .g-meta h2 i { font-style: normal; font-size: .72rem; font-weight: 800; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: #1c1c1e; color: #fff; }
+  .g-meta p { font-size: .84rem; color: #3a3a3c; line-height: 1.4; }
+  .g-swatches { display: flex; gap: 4px; }
+  .g-swatches i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12); }
+  .g-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .g-links a { font-size: .78rem; font-weight: 600; padding: 5px 9px; border-radius: 8px; background: #fff; border: 1px solid #d7d7de; }
+  .g-links a.primary { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
+  .g-lab .lab-panel { height: 100vh; position: sticky; top: 0; }
+  @media (max-width: 1100px) { .g-lab { grid-template-columns: 1fr; } .g-lab .lab-panel { position: static; height: auto; } }
+</style>
+</head>
+<body>
+<div class="g-lab">
+  <main class="g-main">
+    <header class="g-head">
+      <div><h1>Trajet · laboratorio de diseño</h1><p>Cinco direcciones, el mismo tablero real. Tócalas, cambia los escenarios a la derecha y compara la misma pantalla en las cinco.</p></div>
+    </header>
+    <div class="g-tools">
+      <label>Comparar la misma pantalla:</label>
+      <select id="g-screen"></select>
+      <label>Tamaño:</label>
+      <button data-size="390" class="is-on">390×844</button><button data-size="430">430×932</button><button data-size="375">375×667</button>
+      <label>Zoom:</label>
+      <button data-zoom=".6">60 %</button><button data-zoom=".72" class="is-on">72 %</button><button data-zoom="1">100 %</button>
+      <button id="g-reload">Recargar las cinco</button>
+    </div>
+    <div class="g-grid" id="g-grid"></div>
+  </main>
+  <div id="g-panel"></div>
+</div>
+<script src="shared/data.js"></script>
+<script src="shared/core.js"></script>
+<script>
+(() => {
+  const DIRS = [
+    { id: 'a', dir: 'a-anden', name: 'Andén', concept: 'El tablero de la estación en la mano: señalética SNCF/RATP, filas, cifras condensadas, vía en caja amarilla. Corte de aleta.', swatches: ['#0f1c2b', '#f6f6f2', '#f2d53c', '#CEC73D', '#82C8E6'] },
+    { id: 'b', dir: 'b-cristal', name: 'Cristal', concept: 'Liquid Glass sobre el mapa: el cristal es la capa de controles y los minutos van en un billete opaco. Muelle y morph.', swatches: ['#131417', '#eef0ee', '#0a84ff', '#f2d53c', '#CEC73D'] },
+    { id: 'c', dir: 'c-cifra', name: 'Cifra', concept: 'Un número llena la pantalla. Papel y tinta, filetes en vez de tarjetas; el color de línea solo en una franja. Fundido asentado.', swatches: ['#0c0c0c', '#fafaf8', '#111111', '#CEC73D', '#640082'] },
+    { id: 'd', dir: 'd-hilo', name: 'Hilo', concept: 'La línea del trayecto cose todas las pantallas, como el icono: origen, transbordo, destino. El hilo se dibuja y las cifras ruedan.', swatches: ['#0e1119', '#f4f3ef', '#ff6b3d', '#CEC73D', '#640082'] },
+    { id: 'e', dir: 'e-bento', name: 'Bento', concept: 'Rejilla densa: cada celda responde a una pregunta (¿cuánto? ¿corro? ¿qué vía? ¿qué falla?). Monoespaciada y celdas escalonadas.', swatches: ['#101012', '#f1f2f4', '#f2d53c', '#CEC73D', '#ff453a'] }
+  ];
+  const grid = document.getElementById('g-grid');
+  const size = localStorage.getItem('trajet-lab.size') || '390';
+  const SIZES = { '390': [390, 844], '430': [430, 932], '375': [375, 667] };
+  grid.innerHTML = DIRS.map(d => `
+    <article class="g-card">
+      <div class="g-phone" data-id="${d.id}"><iframe src="${d.dir}/index.html?embed=1#board" title="${d.name}" loading="eager"></iframe></div>
+      <div class="g-meta">
+        <h2><i>${d.id.toUpperCase()}</i>${d.name}</h2>
+        <p>${d.concept}</p>
+        <div class="g-swatches">${d.swatches.map(c => `<i style="background:${c}"></i>`).join('')}</div>
+        <div class="g-links"><a class="primary" href="${d.dir}/index.html" target="_blank">Abrir a pantalla completa</a><a href="${d.dir}/index.html?full=1#board" target="_blank">Modo móvil</a><a href="${d.dir}/index.html?full=1#panel" target="_blank" data-desktop>Panel escritorio</a></div>
+      </div>
+    </article>`).join('');
+
+  const applySize = k => { const [w, h] = SIZES[k]; document.querySelectorAll('.g-phone').forEach(p => { p.style.setProperty('--pw', w + 'px'); p.style.setProperty('--ph', h + 'px'); }); localStorage.setItem('trajet-lab.size', JSON.stringify(k)); document.querySelectorAll('[data-size]').forEach(b => b.classList.toggle('is-on', b.dataset.size === k)); };
+  applySize(JSON.parse(size));
+  document.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => applySize(b.dataset.size)));
+  document.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => { document.querySelectorAll('.g-phone').forEach(p => p.style.setProperty('--zoom', b.dataset.zoom)); document.querySelectorAll('[data-zoom]').forEach(x => x.classList.toggle('is-on', x === b)); }));
+  document.getElementById('g-reload').addEventListener('click', () => document.querySelectorAll('iframe').forEach(f => { f.src = f.src; }));
+  document.querySelectorAll('[data-desktop]').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); window.open(a.href, 'trajet-panel-' + a.href, 'width=1440,height=900'); }));
+
+  // Comparar la misma pantalla en las cinco.
+  const sel = document.getElementById('g-screen');
+  sel.innerHTML = Trajet.SCREENS.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+  sel.value = 'board';
+  sel.addEventListener('change', () => Trajet.gallery.navigateAll(sel.value));
+
+  // El panel de escenarios (el mismo que el de cada prototipo) manda a las cinco por BroadcastChannel.
+  Trajet.gallery.mountPanel(document.getElementById('g-panel'));
+})();
+</script>
+</body>
+</html>

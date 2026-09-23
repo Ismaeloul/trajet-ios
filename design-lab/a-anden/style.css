@@ -170,7 +170,7 @@ body.mode-full .tabs { height: 50px; }
 @keyframes dots { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
 
 /* ---------- mapa / trayecto ---------- */
-.mapscr { position: relative; }
+.mapscr { position: relative; flex: 1; min-height: 0; }
 .mapscr .map { position: absolute; inset: 0; }
 .map-top { position: absolute; top: calc(var(--safe-top) + 4px); left: 8px; right: 8px; display: flex; align-items: center; gap: 8px; z-index: 5; }
 .map-route { display: flex; align-items: center; gap: 8px; background: var(--solid); color: var(--solid-ink); padding: 6px 10px 6px 6px; font-weight: 800; font-size: .8rem; letter-spacing: .06em; flex: 1; min-height: 44px; }

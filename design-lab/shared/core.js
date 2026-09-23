@@ -305,6 +305,8 @@ window.Trajet = (() => {
     },
 
     boot() {
+      if (app._booted) return;   // los scripts van con defer: readyState ya es «interactive» y luego llega DOMContentLoaded
+      app._booted = true;
       applyDocumentFlags();
       buildChrome();
       app.root = document.getElementById('screens');

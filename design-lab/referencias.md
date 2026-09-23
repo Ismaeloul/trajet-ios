@@ -76,8 +76,9 @@ sea esto lo he descartado por genérico (plantillas de dashboard, gradientes
 ## Mapas
 
 - **MapLibre GL JS** — <https://maplibre.org/maplibre-gl-js/docs/> ·
-  versión fijada **6.11.1** en jsDelivr (comprobado el CSS en
-  `https://cdn.jsdelivr.net/npm/maplibre-gl@6.11.1/dist/maplibre-gl.css`).
+  versión fijada **5.24.0** en jsDelivr. Ojo: la 6.x es solo ESM (ya no
+  trae `dist/maplibre-gl.js`), y para cargar sin paso de compilación desde
+  una etiqueta `<script>` hace falta la última 5.x, que sí trae el UMD.
 - **OpenFreeMap** — <https://openfreemap.org/quick_start/> y
   <https://github.com/hyperknot/openfreemap-styles> ·
   Sin clave ni registro. Estilos: `liberty`, `bright`, `positron` (claro
