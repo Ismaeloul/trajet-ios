@@ -1,0 +1,114 @@
+/* Base común del laboratorio: reset, marco de iPhone, barra de estado con
+   Dynamic Island, panel de escenarios, modo pantalla completa. Nada de aquí
+   es «diseño» de una dirección: es el banco de pruebas. */
+*, *::before, *::after { box-sizing: border-box; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+html[data-large-text="1"] { font-size: 20px; }
+body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; }
+svg.ico { width: 1.25em; height: 1.25em; flex: none; }
+h1, h2, h3, h4, p { margin: 0; }
+
+/* ---------- el laboratorio (modo frame) ---------- */
+body.mode-frame { background: #e9e9ee; min-height: 100vh; font-family: -apple-system, "Segoe UI", Inter, system-ui, sans-serif; color: #1c1c1e; }
+.lab { display: grid; grid-template-columns: 1fr 320px; min-height: 100vh; }
+.lab-stage { display: grid; place-items: center; padding: 28px 20px; overflow: auto; }
+
+.iphone {
+  --pw: 390px; --ph: 844px; --bezel: 12px; --radius: 56px;
+  width: calc(var(--pw) + var(--bezel) * 2); height: calc(var(--ph) + var(--bezel) * 2);
+  padding: var(--bezel); background: #0b0b0d; border-radius: var(--radius);
+  box-shadow: 0 30px 60px rgba(0,0,0,.28), 0 0 0 2px #2a2a2e, inset 0 0 0 2px #444;
+  position: relative; flex: none; zoom: var(--zoom, 1);
+}
+.iphone[data-size="375"] { --radius: 40px; }
+.iphone::before { /* botones laterales */
+  content: ""; position: absolute; left: -3px; top: 140px; width: 3px; height: 32px; background: #2a2a2e; border-radius: 2px;
+  box-shadow: 0 60px 0 #2a2a2e, 0 130px 0 #2a2a2e;
+}
+.iphone::after { content: ""; position: absolute; right: -3px; top: 210px; width: 3px; height: 70px; background: #2a2a2e; border-radius: 2px; }
+.iphone .app { border-radius: calc(var(--radius) - var(--bezel)); }
+
+/* ---------- la app: el rectángulo que en iOS es la pantalla ---------- */
+.app {
+  --sb: 54px;            /* alto de la barra de estado con isla */
+  --safe-top: 54px; --safe-bottom: 34px;
+  position: relative; width: 100%; height: 100%; overflow: hidden; isolation: isolate;
+  background: var(--bg, #000); color: var(--ink, #fff);
+}
+body.mode-embed, body.mode-embed .app, body.mode-full, body.mode-full .app { width: 100%; height: 100%; }
+body.mode-embed, body.mode-full { height: 100dvh; overflow: hidden; }
+body.mode-full .app { --sb: 0px; --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); border-radius: 0; }
+.screens { position: absolute; inset: 0; }
+.screen { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; }
+.screen .scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none; }
+.screen .scroll::-webkit-scrollbar { display: none; }
+
+/* barra de estado + Dynamic Island (solo en frame/embed; en el móvil la pone iOS) */
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: var(--sb); z-index: 50; pointer-events: none; display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 28px 0; font: 600 15px/1 -apple-system, "SF Pro Text", Inter, system-ui, sans-serif; color: var(--sb-ink, var(--ink, #fff)); }
+.statusbar .sb-time { font-variant-numeric: tabular-nums; letter-spacing: -.2px; margin-left: 4px; }
+.statusbar .di { position: absolute; left: 50%; top: 11px; width: 125px; height: 37px; transform: translateX(-50%); background: #000; border-radius: 20px; }
+.statusbar .sb-right { display: flex; gap: 6px; align-items: center; margin-top: -1px; }
+.statusbar i { display: inline-block; background: currentColor; }
+.statusbar .sb-signal { width: 18px; height: 11px; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 11'%3E%3Crect x='0' y='7' width='3' height='4' rx='1'/%3E%3Crect x='5' y='5' width='3' height='6' rx='1'/%3E%3Crect x='10' y='2.5' width='3' height='8.5' rx='1'/%3E%3Crect x='15' y='0' width='3' height='11' rx='1'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 11'%3E%3Crect x='0' y='7' width='3' height='4' rx='1'/%3E%3Crect x='5' y='5' width='3' height='6' rx='1'/%3E%3Crect x='10' y='2.5' width='3' height='8.5' rx='1'/%3E%3Crect x='15' y='0' width='3' height='11' rx='1'/%3E%3C/svg%3E") center/contain no-repeat; }
+.statusbar .sb-wifi { width: 16px; height: 11px; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 3.5a10 10 0 0 1 14 0M3.5 6.2a6.5 6.5 0 0 1 9 0M6 9a3 3 0 0 1 4 0'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 11' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 3.5a10 10 0 0 1 14 0M3.5 6.2a6.5 6.5 0 0 1 9 0M6 9a3 3 0 0 1 4 0'/%3E%3C/svg%3E") center/contain no-repeat; }
+.statusbar .sb-batt { width: 26px; height: 12px; background: none; border: 1.5px solid currentColor; border-radius: 4px; opacity: .9; position: relative; }
+.statusbar .sb-batt::before { content: ""; position: absolute; inset: 1.5px; right: 5px; background: currentColor; border-radius: 1.5px; }
+.statusbar .sb-batt::after { content: ""; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; background: currentColor; border-radius: 0 2px 2px 0; }
+.screen[data-hides-status] ~ .statusbar, body[data-screen="live"] .statusbar .sb-time, body[data-screen="live"] .statusbar .sb-right,
+body[data-screen="pair"] .statusbar .sb-right, body[data-screen="panel"] .statusbar .sb-right { display: none; }
+/* indicador de inicio */
+body.mode-frame .app::after, body.mode-embed .app::after { content: ""; position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; border-radius: 3px; background: var(--home-ink, currentColor); opacity: .9; transform: translateX(-50%); z-index: 60; pointer-events: none; }
+body[data-screen="live"] .app::after, body[data-screen="widgets"] .app::after, body[data-screen="panel"] .app::after { display: none; }
+
+/* ---------- panel de escenarios ---------- */
+.lab-panel { background: #f7f7f9; border-left: 1px solid #d7d7de; padding: 16px 16px 40px; overflow-y: auto; font-size: 13px; color: #1c1c1e; height: 100vh; position: sticky; top: 0; }
+.lp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 15px; }
+.lp-sec { margin-bottom: 16px; }
+.lp-sec h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6e6e73; margin: 0 0 8px; display: flex; justify-content: space-between; }
+.lp-clock { font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; color: #1c1c1e; font-weight: 600; }
+.lp-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+.lp-row.lp-sub > span { font-size: 12px; color: #6e6e73; margin-right: 2px; }
+.lp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lp-btn { display: inline-flex; align-items: center; justify-content: center; padding: 7px 10px; border-radius: 9px; background: #fff; border: 1px solid #d7d7de; font-weight: 600; font-size: 12.5px; line-height: 1.1; text-align: center; min-height: 32px; }
+.lp-btn:hover { border-color: #b8b8c2; }
+.lp-btn.is-on { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
+.lp-wide { width: 100%; margin-bottom: 6px; }
+.lp-tog { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 4px; font-weight: 500; text-align: left; }
+.lp-sw { width: 34px; height: 20px; border-radius: 10px; background: #c9c9d1; position: relative; flex: none; transition: background .2s; }
+.lp-sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.lp-tog.is-on .lp-sw { background: #34c759; }
+.lp-tog.is-on .lp-sw::after { transform: translateX(14px); }
+.lp-links .lp-btn { text-decoration: none; }
+.lp-close { font-weight: 600; color: #0a84ff; }
+
+/* ---------- modo pantalla completa (el móvil de verdad) ---------- */
+body.mode-full { background: #000; }
+.lab-fab { position: fixed; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); width: 30px; height: 30px; border-radius: 50%; background: rgba(127,127,127,.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 900; display: grid; place-items: center; opacity: .55; }
+.lab-fab span { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,.35); }
+.lab-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 950; display: none; align-items: flex-end; }
+body.panel-open .lab-overlay { display: flex; }
+.lab-overlay .lab-panel { position: static; width: 100%; height: auto; max-height: 82vh; border-radius: 18px 18px 0 0; border: 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
+.lab-overlay .lp-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ---------- reducir movimiento: se mata toda animación que no sea un fundido ---------- */
+html[data-reduce-motion="1"] *:not(.motion-ok), html[data-reduce-motion="1"] *:not(.motion-ok)::before, html[data-reduce-motion="1"] *:not(.motion-ok)::after {
+  animation-duration: .001s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; scroll-behavior: auto !important;
+}
+html[data-reduce-motion="1"] .motion-ok { animation: rm-fade .25s ease both !important; }
+@keyframes rm-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- ayudas comunes ---------- */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.tabular { font-variant-numeric: tabular-nums; }
+.map-box { position: relative; width: 100%; height: 100%; }
+.map-box .maplibregl-map { position: absolute; inset: 0; }
+.map-box .maplibregl-ctrl-attrib { font-size: 9px; opacity: .6; }
+.map-box .maplibregl-ctrl-bottom-right { z-index: 1; }
+.map-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.map-me { width: 18px; height: 18px; border-radius: 50%; background: var(--me, #0a84ff); border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0,0,0,.35); position: relative; }
+.map-me::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; background: var(--me, #0a84ff); opacity: .25; animation: me-pulse 2.2s ease-out infinite; }
+@keyframes me-pulse { 0% { transform: scale(.4); opacity: .45; } 100% { transform: scale(1.3); opacity: 0; } }
+.map-badge { position: absolute; transform: translate(-50%, -50%); pointer-events: none; }
