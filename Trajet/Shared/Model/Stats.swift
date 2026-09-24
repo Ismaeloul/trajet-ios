@@ -1,13 +1,15 @@
 import Foundation
 
-// Historial y estado del aprendizaje de andenes: GET /api/stats,
-// GET /api/platform-model y GET /api/health.
+// Historial y estado del aprendizaje de andenes: GET /api/v1/stats
+// (`StatsV1`: días en hora de París; `by_line[].n` son observaciones, no
+// días) y GET /api/v1/platform-model (`PlatformModel`), la ÚNICA fuente del
+// porcentaje de acierto de la vía (R11). La salud está en Health.swift.
 
 struct MonthStat: Decodable, Identifiable, Hashable, Sendable {
     var month: String         // "2026-08"
     var badDays: Int
     var totalDays: Int
-    var avgDelay: Double
+    var avgDelay: Double?     // null si no hubo retrasos que medir
 
     enum CodingKeys: String, CodingKey { case month, badDays, totalDays, avgDelay }
 
@@ -16,7 +18,7 @@ struct MonthStat: Decodable, Identifiable, Hashable, Sendable {
         month     = c.get(.month, "")
         badDays   = c.get(.badDays, 0)
         totalDays = c.get(.totalDays, 0)
-        avgDelay  = c.get(.avgDelay, 0)
+        avgDelay  = c.opt(.avgDelay)
     }
 
     var id: String { month }
@@ -41,8 +43,8 @@ struct MonthStat: Decodable, Identifiable, Hashable, Sendable {
 
 struct LineStat: Decodable, Identifiable, Hashable, Sendable {
     var worstLine: String
-    var n: Int
-    var avgDelay: Double
+    var n: Int                // observaciones (no días) con esa línea como peor
+    var avgDelay: Double?
 
     enum CodingKeys: String, CodingKey { case worstLine, n, avgDelay }
 
@@ -50,7 +52,7 @@ struct LineStat: Decodable, Identifiable, Hashable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         worstLine = c.get(.worstLine, "")
         n         = c.get(.n, 0)
-        avgDelay  = c.get(.avgDelay, 0)
+        avgDelay  = c.opt(.avgDelay)
     }
 
     var id: String { worstLine }
@@ -58,22 +60,22 @@ struct LineStat: Decodable, Identifiable, Hashable, Sendable {
 
 struct OverallStat: Decodable, Hashable, Sendable {
     var n: Int
-    var avgDelay: Double
-    var maxDelay: Double
+    var avgDelay: Double?
+    var maxDelay: Double?
 
     enum CodingKeys: String, CodingKey { case n, avgDelay, maxDelay }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         n        = c.get(.n, 0)
-        avgDelay = c.get(.avgDelay, 0)
-        maxDelay = c.get(.maxDelay, 0)
+        avgDelay = c.opt(.avgDelay)
+        maxDelay = c.opt(.maxDelay)
     }
 
-    init() { n = 0; avgDelay = 0; maxDelay = 0 }
+    init() { n = 0; avgDelay = nil; maxDelay = nil }
 }
 
-struct StatsResponse: Decodable, Sendable {
+struct StatsResponse: Decodable, Hashable, Sendable {
     var byMonth: [MonthStat]
     var byLine: [LineStat]
     var overall: OverallStat
@@ -90,7 +92,7 @@ struct StatsResponse: Decodable, Sendable {
 
 // ---------------- previsión del andén ----------------
 
-struct PlatformAccuracy: Decodable, Hashable, Sendable {
+struct PlatformAccuracy: Codable, Hashable, Sendable {
     var predictions: Int
     var hits: Int
     var rate: Double?         // null mientras no haya con qué puntuar
@@ -141,61 +143,23 @@ struct PlatformCoverage: Decodable, Identifiable, Hashable, Sendable {
     var id: Int { seq }
 }
 
-struct PlatformModelResponse: Decodable, Sendable {
+struct PlatformModelResponse: Decodable, Hashable, Sendable {
     var accuracy: PlatformAccuracy
+    var collector: CollectorStatus
     var coverage: [PlatformCoverage]
+    var routeId: Int?
     var routeName: String?
 
-    enum CodingKeys: String, CodingKey { case accuracy, coverage, route }
+    enum CodingKeys: String, CodingKey { case accuracy, collector, coverage, route }
     private enum RouteKeys: String, CodingKey { case id, name }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        accuracy = c.get(.accuracy, PlatformAccuracy())
-        coverage = c.get(.coverage, [])
+        accuracy  = c.get(.accuracy, PlatformAccuracy())
+        collector = c.get(.collector, CollectorStatus())
+        coverage  = c.get(.coverage, [])
         let route = try? c.nestedContainer(keyedBy: RouteKeys.self, forKey: .route)
-        routeName = route?.get(.name, "")
-    }
-}
-
-// ---------------- salud del servidor ----------------
-
-struct TranslatorStatus: Decodable, Hashable, Sendable {
-    var ok: Bool
-    var reason: String
-    var model: String
-
-    enum CodingKeys: String, CodingKey { case ok, reason, model }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        ok     = c.get(.ok, false)
-        reason = c.get(.reason, "")
-        model  = c.get(.model, "")
-    }
-
-    init() { ok = false; reason = ""; model = "" }
-}
-
-struct HealthResponse: Decodable, Sendable {
-    var ok: Bool
-    var keyConfigured: Bool
-    var quota: [String: Int]
-    var lastError: String?
-    var nowParis: String
-    var translator: TranslatorStatus
-
-    enum CodingKeys: String, CodingKey {
-        case ok, keyConfigured, quota, lastError, nowParis, translator
-    }
-
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        ok            = c.get(.ok, false)
-        keyConfigured = c.get(.keyConfigured, false)
-        quota         = c.get(.quota, [:])
-        lastError     = c.opt(.lastError)
-        nowParis      = c.get(.nowParis, "")
-        translator    = c.get(.translator, TranslatorStatus())
+        routeId   = route?.opt(.id)
+        routeName = route?.opt(.name)
     }
 }

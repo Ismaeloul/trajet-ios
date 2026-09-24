@@ -1,6 +1,10 @@
 import Foundation
 
-// Planificador puerta a puerta: GET /api/plan y POST /api/routes/from-plan.
+// Planificador puerta a puerta: GET /api/v1/plan y POST
+// /api/v1/routes/from-plan (`Plan`, `PlanOption`, `PlanLeg`,
+// `RouteFromPlanInput`, `RouteFromPlanSaved` del contrato), y las
+// alternativas de GET /api/v1/alternatives/{id} (`Alternatives`,
+// `AlternativesNotNeeded`).
 //
 // La opción elegida se devuelve al servidor TAL CUAL vino, así que estos tipos
 // son Codable en los dos sentidos y se codifican de vuelta a snake_case.
@@ -79,7 +83,7 @@ struct PlanOption: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
-struct PlanResponse: Decodable, Sendable {
+struct PlanResponse: Decodable, Hashable, Sendable {
     var options: [PlanOption]
     var age: Double
 
@@ -92,36 +96,61 @@ struct PlanResponse: Decodable, Sendable {
     }
 }
 
-/// Cuerpo de POST /api/routes/from-plan.
-struct PlanSaveRequest: Encodable, Sendable {
+/// Cuerpo de POST /api/v1/routes/from-plan (`RouteFromPlanInput`): la opción
+/// tal cual vino y los datos de la ruta (`RouteMetaInput`).
+struct PlanSaveRequest: Encodable, Hashable, Sendable {
     var option: PlanOption
     var meta: Meta
 
-    struct Meta: Encodable, Sendable {
+    struct Meta: Encodable, Hashable, Sendable {
         var name: String
         var originId: String
         var originName: String
         var destId: String
         var destName: String
         var days: [Int]
-        var timeMode: String
+        var timeMode: TimeMode        // arrival | departure (R34)
         var timeAt: String
         var timeFrom: String
         var timeTo: String
+
+        init(name: String, originId: String, originName: String, destId: String,
+             destName: String, days: [Int] = [0, 1, 2, 3, 4], timeMode: TimeMode = .arrival,
+             timeAt: String, timeFrom: String = "07:00", timeTo: String = "10:00") {
+            self.name = name
+            self.originId = originId
+            self.originName = originName
+            self.destId = destId
+            self.destName = destName
+            self.days = days
+            self.timeMode = timeMode
+            self.timeAt = timeAt
+            self.timeFrom = timeFrom
+            self.timeTo = timeTo
+        }
+    }
+
+    init(option: PlanOption, meta: Meta) {
+        self.option = option
+        self.meta = meta
     }
 }
 
-struct PlanSaveResponse: Decodable, Sendable {
+/// `RouteFromPlanSaved`.
+struct PlanSaveResponse: Decodable, Hashable, Sendable {
     var id: Int
+    var route: SavedRoute?
     /// Tramos que se han guardado sin sentido porque el texto de Navitia no
-    /// casaba con el del tiempo real. Hay que decirlo, no callarlo.
+    /// casaba con el del tiempo real (`line_code`). Hay que decirlo, no
+    /// callarlo (R33).
     var withoutDirection: [String]
 
-    enum CodingKeys: String, CodingKey { case id, withoutDirection }
+    enum CodingKeys: String, CodingKey { case id, route, withoutDirection }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id               = c.get(.id, 0)
+        route            = c.opt(.route)
         withoutDirection = c.get(.withoutDirection, [])
     }
 }
@@ -183,6 +212,17 @@ struct AlternativeOption: Decodable, Identifiable, Hashable, Sendable {
 
     var id: String { legs.map(\.code).joined(separator: ">") + "|\(totalMinutes)" }
 
+    /// Hora de Navitia «20260831T083100» → «08:31» (R56); "" si no se lee.
+    static func navitiaTime(_ raw: String) -> String {
+        guard let t = raw.firstIndex(of: "T") else { return "" }
+        let digits = raw[raw.index(after: t)...].prefix(4)
+        guard digits.count == 4, digits.allSatisfy(\.isNumber) else { return "" }
+        return "\(digits.prefix(2)):\(digits.suffix(2))"
+    }
+
+    var departureTime: String { Self.navitiaTime(departure) }
+    var arrivalTime: String { Self.navitiaTime(arrival) }
+
     /// «+12 min» respecto de lo que dura normalmente la ruta.
     var deltaLabel: String? {
         guard let deltaMinutes else { return nil }
@@ -210,14 +250,18 @@ struct AffectedLine: Decodable, Identifiable, Hashable, Sendable {
     var id: String { lineId }
 }
 
-struct AlternativesResponse: Decodable, Sendable {
+/// `Alternatives` o, si ninguna línea está tocada y no se forzó, la respuesta
+/// corta `AlternativesNotNeeded` (`needed: false`, sin opciones).
+struct AlternativesResponse: Decodable, Hashable, Sendable {
     var needed: Bool
     var affected: [AffectedLine]
     var options: [AlternativeOption]
     var baselineMinutes: Int?
+    var age: Double
+    var quota: [String: Int]
 
     enum CodingKeys: String, CodingKey {
-        case needed, affected, options, baselineMinutes
+        case needed, affected, options, baselineMinutes, age, quota
     }
 
     init(from decoder: Decoder) throws {
@@ -226,5 +270,10 @@ struct AlternativesResponse: Decodable, Sendable {
         affected        = c.get(.affected, [])
         options         = c.get(.options, [])
         baselineMinutes = c.opt(.baselineMinutes)
+        age             = c.get(.age, 0)
+        quota           = c.get(.quota, [:])
     }
+
+    /// Ninguna opción sirve (todas pasan por otra línea caída) o no hay.
+    var hasUsableOption: Bool { options.contains { $0.usable } }
 }
