@@ -238,6 +238,9 @@ struct PlanOptionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.Space.m) {
             HStack(alignment: .firstTextBaseline, spacing: Metrics.Space.sm) {
+                // La cifra y la etiqueta no se parten nunca («4» / «7»,
+                // «Reco-mendado» con letra grande): si no cabe, las horas
+                // de la derecha ceden.
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(Fmt.minutes(option.minutes))
                         .numberFont(.stat)
@@ -248,10 +251,14 @@ struct PlanOptionCard: View {
                             .foregroundStyle(Palette.ink3)
                     }
                 }
+                .lineLimit(1)
+                .fixedSize()
                 if let kind = PlannerText.kind(option.kind) {
                     Text(kind)
                         .textLevel(.label)
                         .foregroundStyle(Palette.ink2)
+                        .lineLimit(1)
+                        .fixedSize()
                         .padding(.horizontal, Metrics.Space.sm)
                         .padding(.vertical, 3)
                         .background(Capsule().fill(Palette.surfaceHi))
@@ -261,6 +268,7 @@ struct PlanOptionCard: View {
                     Text(times)
                         .textLevel(.meta)
                         .foregroundStyle(Palette.ink2)
+                        .multilineTextAlignment(.trailing)
                 }
             }
             VStack(alignment: .leading, spacing: Metrics.Space.sm) {
