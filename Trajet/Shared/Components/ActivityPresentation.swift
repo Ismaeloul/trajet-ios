@@ -74,6 +74,24 @@ struct ActivityPresentation: Hashable, Sendable {
 
     var isEnded: Bool { state.ended != nil }
 
+    /// Cuándo se quita sola la actividad terminada; nil si la foto no dice
+    /// cuándo terminó.
+    var dismissesAt: Date? {
+        state.endedAt.map { $0.addingTimeInterval(ActivityContentBuilder.endedLinger) }
+    }
+
+    /// El pie del estado final: «Has llegado · se quita sola a las 13:05 ·
+    /// toca para abrir la ruta». Sin la hora de fin se dice lo que es cierto
+    /// siempre («en unos minutos»).
+    var endedDetail: String {
+        let when = dismissesAt.map { "a las \(GlanceClock.hhmm($0))" } ?? "en unos minutos"
+        switch state.ended {
+        case .some(.arrived): return "Has llegado · se quita sola \(when) · toca para abrir la ruta"
+        case .some(.maxDuration): return "Llegó al tiempo máximo · se quita sola \(when) · toca para abrir la ruta"
+        case .none: return "Se quita sola \(when) · toca para abrir la ruta"
+        }
+    }
+
     /// Qué se dice cuando no hay salida que enseñar.
     var empty: GlanceEmpty? {
         guard hero == nil else { return nil }

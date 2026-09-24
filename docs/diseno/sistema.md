@@ -1186,6 +1186,7 @@ struct TrajetActivityAttributes: ActivityAttributes {
         var refreshHint: Int          // BoardV1.server.refresh_hint_s
         var connection: Connection    // .ok · .offline (fallo de red) · .noKey (ErrorV1 prim_key_missing) — derivado
         var ended: EndReason?         // .arrived · .maxDuration (solo en el estado final; derivado del modo trayecto)
+        var endedAt: Date?            // cuándo terminó (solo en el estado final): «se quita sola a las …» (derivado)
     }
     struct Leg: Codable, Hashable {
         var seq: Int                  // BoardLegV1.seq

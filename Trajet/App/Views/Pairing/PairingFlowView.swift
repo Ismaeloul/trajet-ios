@@ -339,7 +339,7 @@ struct PairingFlowView: View {
     }
 
     /// Emparejado. La háptica va por UIKit: en la raíz esta pantalla se va
-    /// en el mismo instante (RootView pasa a las pestañas).
+    /// enseguida (RootView deja ver el «Listo» 1,2 s y funde a las pestañas).
     private func succeeded() {
         guard !didPair else { return }
         didPair = true

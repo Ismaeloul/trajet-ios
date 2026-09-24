@@ -82,7 +82,7 @@ enum GlancePreview {
     }
 
     static var ended: TrajetActivityAttributes.ContentState {
-        ActivityContentBuilder.ended(state(.unTramo), reason: .arrived)
+        ActivityContentBuilder.ended(state(.unTramo), reason: .arrived, at: reference)
     }
 
     // MARK: Widgets

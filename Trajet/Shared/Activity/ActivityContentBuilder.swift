@@ -94,12 +94,17 @@ enum ActivityContentBuilder {
             ended: options.ended)
     }
 
+    /// «Trayecto terminado» se queda este rato en pantalla y se quita solo.
+    static let endedLinger: TimeInterval = 15 * 60
+
     /// El mismo estado, ya terminado (llegada o duración máxima): lo escribe
-    /// el modo trayecto con `end(…, dismissalPolicy: .after(.now + 15 min))`.
-    /// Parado a mano no tiene estado final (`.immediate`).
-    static func ended(_ state: State, reason: EndReason) -> State {
+    /// el modo trayecto con `end(…, dismissalPolicy: .after(at + endedLinger))`.
+    /// Con `at`, la actividad dice a qué hora se quita. Parado a mano no
+    /// tiene estado final (`.immediate`).
+    static func ended(_ state: State, reason: EndReason, at date: Date? = nil) -> State {
         var s = state
         s.ended = reason
+        s.endedAt = date
         return s
     }
 

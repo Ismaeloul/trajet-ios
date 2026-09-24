@@ -100,7 +100,7 @@ final class ActivityController: TripActivityControlling {
     typealias State = TrajetActivityAttributes.ContentState
 
     /// «Trayecto terminado» se queda este rato y se quita solo.
-    nonisolated static let endedLinger: TimeInterval = 15 * 60
+    nonisolated static let endedLinger: TimeInterval = ActivityContentBuilder.endedLinger
     /// Una foto igual que la anterior no se vuelve a escribir antes de esto
     /// (sí para correr `staleDate`).
     nonisolated static let sameStateInterval: TimeInterval = 45
@@ -173,8 +173,8 @@ final class ActivityController: TripActivityControlling {
         case .manual, .permissionDenied, .failed: finalReason = nil
         }
         if let finalReason, let snapshot {
-            var state = Self.state(for: snapshot, previous: previous)
-            state.ended = finalReason
+            let state = ActivityContentBuilder.ended(Self.state(for: snapshot, previous: previous),
+                                                     reason: finalReason, at: snapshot.now)
             await Self.finish(ids: ids, state: state,
                               dismissAt: snapshot.now.addingTimeInterval(Self.endedLinger))
         } else {

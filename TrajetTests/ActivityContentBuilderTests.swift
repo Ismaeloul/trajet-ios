@@ -335,6 +335,31 @@ final class ActivityContentBuilderTests: XCTestCase {
         XCTAssertNil(ActivityContentBuilder.alert(previous: make(board(.viaProbable)), current: s))
     }
 
+    /// Con la hora de fin, «se quita sola a las 13:05» (12:50 + 15 min, hora
+    /// de París); sin ella, «en unos minutos», que siempre es verdad.
+    func testTerminadoDiceCuandoSeQuita() throws {
+        let s = ActivityContentBuilder.ended(make(board(.unTramo)), reason: .arrived, at: ref)
+        XCTAssertEqual(s.endedAt, ref)
+        let p = present(s)
+        XCTAssertEqual(p.dismissesAt, ref.addingTimeInterval(15 * 60))
+        XCTAssertEqual(p.endedDetail, "Has llegado · se quita sola a las 13:05 · toca para abrir la ruta")
+
+        let limit = ActivityContentBuilder.ended(make(board(.unTramo)), reason: .maxDuration, at: ref)
+        XCTAssertTrue(present(limit).endedDetail.hasPrefix("Llegó al tiempo máximo · se quita sola a las 13:05"))
+
+        let unknown = ActivityContentBuilder.ended(make(board(.unTramo)), reason: .arrived)
+        XCTAssertNil(unknown.endedAt)
+        XCTAssertNil(present(unknown).dismissesAt)
+        XCTAssertEqual(present(unknown).endedDetail, "Has llegado · se quita sola en unos minutos · toca para abrir la ruta")
+
+        // Un estado viejo (sin el campo) se sigue leyendo.
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(s)) as? [String: Any])
+        json.removeValue(forKey: "endedAt")
+        let old = try JSONDecoder().decode(State.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertNil(old.endedAt)
+        XCTAssertEqual(old.ended, .arrived)
+    }
+
     /// El estado cabe de sobra en los 4 KB de ActivityKit.
     func testCabeEnCuatroKB() throws {
         for (c, seq) in [(PreviewData.BoardCase.cincoTramos, 2), (.transbordo, 0), (.unTramo, 0)] {

@@ -344,13 +344,9 @@ struct ActivityEndedView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Sin la hora de fin en el estado, no se dice «a las 13:05»: se dice lo
-    /// que es cierto siempre.
+    /// «se quita sola a las 13:05» con la hora de fin del estado; sin ella,
+    /// «en unos minutos» (`ActivityPresentation.endedDetail`).
     private var detail: String {
-        switch presentation.state.ended {
-        case .some(.arrived): "Has llegado · se quita sola en unos minutos · toca para abrir la ruta"
-        case .some(.maxDuration): "Llegó al tiempo máximo · se quita sola en unos minutos · toca para abrir la ruta"
-        case .none: "Se quita sola en unos minutos · toca para abrir la ruta"
-        }
+        presentation.endedDetail
     }
 }
