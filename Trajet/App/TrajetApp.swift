@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Trajet: la app del tablero. Crea los servicios (los de verdad o, con
 /// `-demo`, los del servidor falso en proceso), los pasa por el entorno y
@@ -9,7 +10,13 @@ struct TrajetApp: App {
 
     init() {
 #if DEBUG
-        if let escenario = DemoServer.scenarioName(arguments: ProcessInfo.processInfo.arguments) {
+        let arguments = ProcessInfo.processInfo.arguments
+        // Tests de interfaz y capturas: sin animaciones, para que XCTest no
+        // espere a que la app «se quede quieta» y las capturas salgan en reposo.
+        if arguments.contains("-sinAnimaciones") {
+            UIView.setAnimationsEnabled(false)
+        }
+        if let escenario = DemoServer.scenarioName(arguments: arguments) {
             _services = State(initialValue: AppServices.demo(escenario: escenario))
         } else {
             _services = State(initialValue: AppServices.live())

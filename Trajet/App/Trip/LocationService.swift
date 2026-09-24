@@ -292,21 +292,40 @@ private final class LocationDelegateProxy: NSObject, CLLocationManagerDelegate {
 /// Ubicación de mentira para la demo (`-demo`) y los tests de interfaz: con
 /// permiso y en la calle de Amsterdam, a unos 250 m de Saint-Lazare. No pide
 /// nada al sistema.
+///
+/// Con `-demoSinUbicacion` el permiso está sin contestar y, al pedirlo, se
+/// deniega: sirve para probar que el trayecto sigue sin GPS.
 @MainActor
 @Observable
 final class DemoLocationService: LocationService {
     nonisolated static let spot = GeoPoint(latitude: 48.87895, longitude: 2.32675)
 
-    private(set) var authorization: LocationAuthorization = .whenInUse
+    private(set) var authorization: LocationAuthorization
     private(set) var lastLocation: TripLocation? = nil
     private(set) var isTracking = false
     @ObservationIgnored var onLocation: (@MainActor (TripLocation) -> Void)? = nil
     @ObservationIgnored var onAuthorizationChange: (@MainActor (LocationAuthorization) -> Void)? = nil
 
-    init() {}
+    init(withoutPermission: Bool = ProcessInfo.processInfo.arguments.contains("-demoSinUbicacion")) {
+        authorization = withoutPermission ? .notDetermined : .whenInUse
+    }
 
-    func requestWhenInUse() async -> LocationAuthorization { authorization }
-    func requestAlways() async -> LocationAuthorization { authorization }
+    func requestWhenInUse() async -> LocationAuthorization {
+        deny()
+        return authorization
+    }
+
+    func requestAlways() async -> LocationAuthorization {
+        deny()
+        return authorization
+    }
+
+    /// Sin permiso, la respuesta a la pregunta es «no».
+    private func deny() {
+        guard authorization == .notDetermined else { return }
+        authorization = .denied
+        onAuthorizationChange?(.denied)
+    }
 
     func startTripUpdates() {
         isTracking = true

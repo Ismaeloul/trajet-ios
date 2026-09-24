@@ -45,6 +45,7 @@ struct ManualPairingView: View {
                         .focused($focus, equals: .code)
                         .onSubmit { focus = .lan }
                         .accessibilityLabel("Código de emparejamiento")
+                        .accessibilityIdentifier("emparejar.codigo")
                 } header: {
                     header("Código")
                 } footer: {
@@ -108,6 +109,7 @@ struct ManualPairingView: View {
                     }
                     .filledButton(.primary)
                     .disabled(!canSubmit)
+                    .accessibilityIdentifier("emparejar.enviar")
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
                 }

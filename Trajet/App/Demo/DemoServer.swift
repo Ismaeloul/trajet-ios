@@ -12,6 +12,12 @@ import Foundation
 /// - `sinClave`: el servidor no tiene clave de PRIM (503 `prim_key_missing`).
 /// - `cuotaAgotada`: 503 `prim_quota_exhausted`.
 /// - `revocado`: el servidor ya no reconoce el token (401).
+///
+/// Argumentos sueltos (para los tests de interfaz y las capturas):
+/// - `-demoSinCache`: sin tablero guardado, para ver los estados de error a
+///   pantalla completa (R53).
+/// - `-demoSinUbicacion`: el permiso de ubicación está sin contestar y, al
+///   pedirlo, se deniega (el trayecto sigue sin GPS).
 enum DemoScenario: Equatable, Sendable {
     case board(PreviewData.BoardCase)
     case unpaired
@@ -299,7 +305,8 @@ extension AppServices {
         }
         let api = TrajetAPI(config: config, tokens: tokens,
                             session: TrajetAPI.makeSession(protocolClasses: [DemoServer.self]))
-        let cached = scenario.cachedBoard.map {
+        let sinCache = ProcessInfo.processInfo.arguments.contains("-demoSinCache")
+        let cached = sinCache ? nil : scenario.cachedBoard.map {
             PreviewData.cached($0, receivedSecondsAgo: 240)
         }
         return AppServices(config: config, api: api, tokens: tokens,

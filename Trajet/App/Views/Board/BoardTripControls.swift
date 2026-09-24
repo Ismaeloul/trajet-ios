@@ -27,6 +27,7 @@ struct BoardTripControls: View {
                     Label("Parar trayecto", systemImage: "stop.fill")
                 }
                 .filledButton(.danger)
+                .accessibilityIdentifier("tablero.parar")
             } else if isAskingPermission {
                 Button {} label: {
                     HStack(spacing: Metrics.Space.sm) {
@@ -45,6 +46,7 @@ struct BoardTripControls: View {
                 }
                 .filledButton(.primary)
                 .accessibilityHint("Sigue la ruta en segundo plano hasta que llegues")
+                .accessibilityIdentifier("tablero.empezar")
             }
         }
         .haptic(.tripStart, trigger: started)

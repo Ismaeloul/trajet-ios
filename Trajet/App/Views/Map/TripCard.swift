@@ -184,6 +184,7 @@ struct TripCard: View {
             }
             .filledButton(.danger)
             .cristalID("trip-button", in: morph)
+            .accessibilityIdentifier("trayecto.parar")
         } else if trip.isAskingPermission {
             Button {} label: {
                 HStack(spacing: Metrics.Space.sm) {
@@ -204,6 +205,7 @@ struct TripCard: View {
             .filledButton(.primary)
             .cristalID("trip-button", in: morph)
             .accessibilityHint("Sigue la ruta en segundo plano hasta que llegues")
+            .accessibilityIdentifier("trayecto.empezar")
         }
     }
 

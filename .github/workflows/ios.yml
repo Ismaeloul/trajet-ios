@@ -36,7 +36,9 @@ env:
 jobs:
   ios:
     runs-on: macos-latest
-    timeout-minutes: 60
+    # «capturas» son 7 pasadas de simulador (3 modelos x claro/oscuro + letra
+    # grande) detras de compilar, las IPA y los tests: cerca de una hora.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +57,7 @@ jobs:
           xcodegen generate --spec project.yml
 
       - name: Compilar todo (simulador, Debug, con los tests)
+        id: compilar
         run: |
           set -uo pipefail
           mkdir -p build
@@ -93,8 +96,10 @@ jobs:
           set -euo pipefail
           bash scripts/ci-tests.sh
 
+      # Con que compile basta: si falla un test de flujo, las capturas se
+      # hacen igual (sirven para ver que ha pasado).
       - name: Capturas
-        if: env.MODO == 'capturas'
+        if: env.MODO == 'capturas' && !cancelled() && steps.compilar.outcome == 'success'
         run: |
           set -euo pipefail
           bash scripts/ci-capturas.sh
@@ -132,7 +137,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Trajet-xcresult-${{ github.run_number }}
-          path: build/*.xcresult
+          path: build/tests.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # Los .xcresult de las capturas llevan todas las imagenes dentro: solo
+      # se suben si algo ha fallado, para ver por que.
+      - name: Subir resultados de capturas (si fallan)
+        if: env.MODO == 'capturas' && failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-capturas-xcresult-${{ github.run_number }}
+          path: |
+            build/capturas-*.xcresult
+            build/capturas-*.log
           if-no-files-found: ignore
           retention-days: 7
 

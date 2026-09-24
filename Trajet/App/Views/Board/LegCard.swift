@@ -42,6 +42,8 @@ struct LegCard: View {
         .contentShape(RoundedRectangle(cornerRadius: Metrics.Radius.card, style: .continuous))
         .onTapGesture { onOpen() }
         .accessibilityElement(children: .contain)
+        // Para los tests de interfaz: «tablero.tramo.0», «tablero.tramo.1»…
+        .accessibilityIdentifier("tablero.tramo.\(leg.seq)")
     }
 
     // MARK: - Cabecera
