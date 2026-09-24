@@ -89,12 +89,14 @@ Todas las decisiones están en `docs/decisiones.md`; el diario en
 
 - **Rotar la clave de pruebas de PRIM** (salió en la salida de un comando de
   la sesión; no está en ningún fichero). Ver `docs/pendiente.md`.
-- `trajet-ios` es **público** desde hoy (lo autorizaste); `trajet-server`
-  sigue privado.
+- `trajet-ios` y `trajet-server` son **públicos** (lo autorizaste).
 - La copia de `trajet.db` ya no hace falta: empiezas de cero.
-- No publiques la 0.4.0 del servidor hasta tener la app del iPhone
-  emparejada (la web desaparece). El store está preparado en un commit local
-  de `umbrel-app-store` (rama `rewrite-v2`, sin push).
+- La 0.4.0 del servidor **ya está en tu tienda** (`umbrel-app-store`, main,
+  commit `605275f`) y su imagen es pública en GHCR
+  (`ghcr.io/ismaeloul/trajet-server:0.4.0`, la publica el CI con el tag
+  `v0.4.0`). Antes de instalarla, para la pila vieja de `~/trajet` del NAS
+  (ocupa el puerto 7796). Al instalar, la web desaparece: empareja el iPhone
+  con el QR del panel.
 
 ## Dónde están las IPA y las capturas
 
