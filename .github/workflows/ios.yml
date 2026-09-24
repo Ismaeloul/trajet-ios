@@ -6,7 +6,7 @@ name: IPA
 on:
   push:
     branches: [main, rewrite-v2]
-    paths-ignore: ["README.md", "docs/**"]
+    paths-ignore: ["README.md", "docs/**", "design-lab/**"]
   workflow_dispatch:
 
 permissions:

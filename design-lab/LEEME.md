@@ -17,7 +17,14 @@ design-lab/
   referencias.md    lo que he mirado antes de diseñar
   revision.md       la autocrítica contra las reglas del brief
   servir.ps1        levanta el servidor en la red local
+  tokens.json       tokens del sistema «Cristal» (FASE 2A), generados; no se editan a mano
+  sistema/          muestrario de los tokens y componentes (?theme=light|dark &hc=1 &rt=1 &rm=1)
+  tools/tokens.mjs  fuente de los tokens: OKLCH → sRGB, contrastes WCAG, Swift y colorsets
+  tools/capturar.mjs  capturas y GIFs con Chrome headless
 ```
+
+El sistema de diseño elegido (B «Cristal») está en `docs/diseno/sistema.md`;
+lo que hay que corregir de B al pasarlo a nativo, en `docs/diseno/ajustes-b.md`.
 
 ## Verlo en el PC
 

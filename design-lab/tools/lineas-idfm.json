@@ -1,0 +1,401 @@
+{
+ "fuente": "IDFM · referentiel-des-lignes (data.iledefrance-mobilites.fr, API Explore v2.1), campos colourweb_hexa y textcolourweb_hexa",
+ "licencia": "ODbL",
+ "descargado": "2026-09-24",
+ "peticion": "exports/json?where=transportmode in ('metro','rail','tram','funicular') and status='active'&select=id_line,shortname_line,transportmode,transportsubmode,networkname,colourweb_hexa,textcolourweb_hexa",
+ "nota": "Solo modos ferroviarios, metro, tranvía y funicular (los buses son ~1500 líneas y usan las mismas reglas). TER deduplicado: todas las líneas TER comparten color.",
+ "lineas": [
+  {
+   "id_line": "C01371",
+   "code": "1",
+   "modo": "metro",
+   "submodo": null,
+   "color": "FFBE00",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01372",
+   "code": "2",
+   "modo": "metro",
+   "submodo": null,
+   "color": "0055C8",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01373",
+   "code": "3",
+   "modo": "metro",
+   "submodo": null,
+   "color": "6E6E00",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01386",
+   "code": "3B",
+   "modo": "metro",
+   "submodo": null,
+   "color": "82C8E6",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01374",
+   "code": "4",
+   "modo": "metro",
+   "submodo": null,
+   "color": "A0006E",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01375",
+   "code": "5",
+   "modo": "metro",
+   "submodo": null,
+   "color": "FF5A00",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01376",
+   "code": "6",
+   "modo": "metro",
+   "submodo": null,
+   "color": "82DC73",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01377",
+   "code": "7",
+   "modo": "metro",
+   "submodo": null,
+   "color": "FF82B4",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01387",
+   "code": "7B",
+   "modo": "metro",
+   "submodo": null,
+   "color": "82DC73",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01378",
+   "code": "8",
+   "modo": "metro",
+   "submodo": null,
+   "color": "D282BE",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01379",
+   "code": "9",
+   "modo": "metro",
+   "submodo": null,
+   "color": "D2D200",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01380",
+   "code": "10",
+   "modo": "metro",
+   "submodo": null,
+   "color": "DC9600",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01381",
+   "code": "11",
+   "modo": "metro",
+   "submodo": null,
+   "color": "6E491E",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01382",
+   "code": "12",
+   "modo": "metro",
+   "submodo": null,
+   "color": "00643C",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01383",
+   "code": "13",
+   "modo": "metro",
+   "submodo": null,
+   "color": "82C8E6",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01384",
+   "code": "14",
+   "modo": "metro",
+   "submodo": null,
+   "color": "640082",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01742",
+   "code": "A",
+   "modo": "rail",
+   "submodo": "local",
+   "color": "EB2132",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01743",
+   "code": "B",
+   "modo": "rail",
+   "submodo": "local",
+   "color": "5091CB",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01727",
+   "code": "C",
+   "modo": "rail",
+   "submodo": "local",
+   "color": "FFCC30",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01728",
+   "code": "D",
+   "modo": "rail",
+   "submodo": "local",
+   "color": "008B5B",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01729",
+   "code": "E",
+   "modo": "rail",
+   "submodo": "local",
+   "color": "B94E9A",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C00563",
+   "code": "CDG VAL",
+   "modo": "rail",
+   "submodo": "railShuttle",
+   "color": "5CC5ED",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01388",
+   "code": "ORLYVAL",
+   "modo": "rail",
+   "submodo": "railShuttle",
+   "color": "5EC5ED",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01748",
+   "code": "TER",
+   "modo": "rail",
+   "submodo": "regionalRail",
+   "color": "AAAAAA",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01737",
+   "code": "H",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "84653D",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01739",
+   "code": "J",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "CEC73D",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01738",
+   "code": "K",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "9B9842",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01740",
+   "code": "L",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "C4A4CC",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01736",
+   "code": "N",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "00B297",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01730",
+   "code": "P",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "F58F53",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01731",
+   "code": "R",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "F49FB3",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01741",
+   "code": "U",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "B6134C",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C02711",
+   "code": "V",
+   "modo": "rail",
+   "submodo": "suburbanRailway",
+   "color": "9F9825",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01389",
+   "code": "T1",
+   "modo": "tram",
+   "submodo": null,
+   "color": "0055C8",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01390",
+   "code": "T2",
+   "modo": "tram",
+   "submodo": null,
+   "color": "A0006E",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01391",
+   "code": "T3a",
+   "modo": "tram",
+   "submodo": null,
+   "color": "FF5A00",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01679",
+   "code": "T3b",
+   "modo": "tram",
+   "submodo": null,
+   "color": "00643C",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01843",
+   "code": "T4",
+   "modo": "tram",
+   "submodo": null,
+   "color": "DC9600",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C01684",
+   "code": "T5",
+   "modo": "tram",
+   "submodo": null,
+   "color": "640082",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01794",
+   "code": "T6",
+   "modo": "tram",
+   "submodo": null,
+   "color": "FF0000",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01774",
+   "code": "T7",
+   "modo": "tram",
+   "submodo": null,
+   "color": "6E491E",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01795",
+   "code": "T8",
+   "modo": "tram",
+   "submodo": null,
+   "color": "6E6E00",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C02317",
+   "code": "T9",
+   "modo": "tram",
+   "submodo": null,
+   "color": "3C91DC",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C02528",
+   "code": "T10",
+   "modo": "tram",
+   "submodo": null,
+   "color": "6E6E00",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01999",
+   "code": "T11",
+   "modo": "tram",
+   "submodo": null,
+   "color": "FF5A00",
+   "texto": "000000"
+  },
+  {
+   "id_line": "C02529",
+   "code": "T12",
+   "modo": "tram",
+   "submodo": null,
+   "color": "A50034",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C02344",
+   "code": "T13",
+   "modo": "tram",
+   "submodo": null,
+   "color": "8D653D",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C02732",
+   "code": "T14",
+   "modo": "tram",
+   "submodo": null,
+   "color": "00A092",
+   "texto": "FFFFFF"
+  },
+  {
+   "id_line": "C01385",
+   "code": "FUN",
+   "modo": "funicular",
+   "submodo": null,
+   "color": "AFAFAF",
+   "texto": "000000"
+  }
+ ]
+}

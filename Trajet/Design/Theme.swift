@@ -1,53 +1,69 @@
 import SwiftUI
 
-/// La paleta neutra.
-///
-/// Regla de fondo, heredada del manual: los colores oficiales de las líneas
-/// son los ÚNICOS colores saturados de la pantalla. Todo lo de aquí es gris,
-/// salvo los tres tonos de aviso, que se usan con cuentagotas.
-enum Palette {
-    static let background = Color(red: 0.039, green: 0.039, blue: 0.047)   // #0a0a0c
-    static let surface    = Color(red: 0.075, green: 0.075, blue: 0.086)   // #131316
-    static let surfaceHi  = Color(red: 0.110, green: 0.110, blue: 0.125)   // #1c1c20
-    static let hairline   = Color.white.opacity(0.09)
-    static let hairlineHi = Color.white.opacity(0.16)
+// FACHADA TEMPORAL — SE BORRA EN LA FASE 3.
+//
+// Esto era la paleta oscura de la v1 (Palette, TypeScale, Metrics y tres
+// modificadores). La capa nueva vive en Tokens.swift, Typography.swift,
+// Metrics.swift, Motion.swift y Glass.swift (sistema «Cristal»,
+// docs/diseno/sistema.md). Aquí solo quedan los nombres viejos que usan las
+// vistas de la v1 y Format.swift, redirigidos a los tokens nuevos y marcados
+// como obsoletos para que el compilador enseñe cada uso pendiente.
+//
+// Cuando la FASE 3 haya rehecho las vistas y movido `Pace.color` de
+// Format.swift a `Palette.badText` / `Palette.ink2` / `Palette.ink3`, este
+// fichero se borra entero.
 
-    static let ink        = Color.white
-    static let inkMuted   = Color.white.opacity(0.62)
-    static let inkFaint   = Color.white.opacity(0.38)
+// MARK: - Nombres viejos de la paleta
+// `Palette.surface`, `.surfaceHi`, `.ink`, `.warn`, `.bad` y `.ok` existen con
+// el mismo nombre en la paleta nueva y ya apuntan a ella.
 
-    /// Avisos. Deliberadamente apagados: compiten con los colores de línea.
-    static let warn   = Color(red: 0.98, green: 0.72, blue: 0.20)
-    static let bad    = Color(red: 1.00, green: 0.40, blue: 0.44)
-    static let ok     = Color(red: 0.35, green: 0.85, blue: 0.58)
+extension Palette {
+    @available(*, deprecated, renamed: "bg", message: "Fachada de la v1: usa Palette.bg")
+    static var background: Color { bg }
+
+    @available(*, deprecated, renamed: "rule", message: "Fachada de la v1: usa Palette.rule")
+    static var hairline: Color { rule }
+
+    @available(*, deprecated, message: "Fachada de la v1: usa Palette.rule (con «Aumentar contraste» ya se refuerza sola)")
+    static var hairlineHi: Color { rule }
+
+    @available(*, deprecated, renamed: "ink2", message: "Fachada de la v1: usa Palette.ink2")
+    static var inkMuted: Color { ink2 }
+
+    @available(*, deprecated, renamed: "ink3", message: "Fachada de la v1: usa Palette.ink3")
+    static var inkFaint: Color { ink3 }
 }
 
-/// Tipografía. Los minutos van en cifras de ancho fijo para que no bailen
-/// cuando pasan de 9 a 10 en mitad de un refresco.
+// MARK: - Tipografía vieja (ahora con Dynamic Type)
+
+@available(*, deprecated, message: "Fachada de la v1: usa .textLevel(_:) y .numberFont(_:) (Typography.swift)")
 enum TypeScale {
+    /// Antes fijo; sigue fijo porque aquí no hay `@ScaledMetric`. Usa `.numberFont`.
     static func minutes(_ size: CGFloat) -> Font {
-        .system(size: size, weight: .heavy, design: .rounded)
-            .monospacedDigit()
+        NumberLevel.font(size: size)
     }
 
-    static let title    = Font.system(size: 30, weight: .heavy).width(.compressed)
-    static let section  = Font.system(size: 20, weight: .bold)
-    static let body     = Font.system(size: 15, weight: .medium)
-    static let caption  = Font.system(size: 13, weight: .semibold)
-    static let overline = Font.system(size: 10, weight: .bold)
-    static let badge    = Font.system(size: 13, weight: .heavy, design: .rounded)
+    static var title: Font { Font.system(.title, design: .default, weight: .heavy) }
+    static var section: Font { TextLevel.legTitle.font }
+    static var body: Font { TextLevel.callout.font }
+    static var caption: Font { Font.system(.footnote, design: .default, weight: .semibold) }
+    static var overline: Font { Font.system(.caption2, design: .default, weight: .bold) }
+    static var badge: Font { Font.system(.subheadline, design: .rounded, weight: .heavy) }
 }
 
 extension View {
-    /// Rótulo pequeño en versales, el que rotula las secciones.
-    func overlineStyle(_ color: Color = Palette.inkFaint) -> some View {
-        self.font(TypeScale.overline)
+    /// Rótulo pequeño en versales de la v1. En «Cristal» los rótulos van en
+    /// minúscula normal: `.textLevel(.kicker)` con `Palette.ink3`.
+    @available(*, deprecated, message: "Fachada de la v1: usa .textLevel(.kicker).foregroundStyle(Palette.ink3)")
+    func overlineStyle(_ color: Color = Palette.ink3) -> some View {
+        self.font(Font.system(.caption2, design: .default, weight: .bold))
             .textCase(.uppercase)
             .kerning(1.3)
             .foregroundStyle(color)
     }
 
-    /// Superficie de tarjeta, con su filete.
+    /// Superficie de tarjeta de la v1, ya con los colores nuevos.
+    @available(*, deprecated, message: "Fachada de la v1: usa .cardBackground() (Metrics.swift)")
     func cardSurface(_ radius: CGFloat = 22, fill: Color = Palette.surface) -> some View {
         self.background(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -55,23 +71,26 @@ extension View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: radius, style: .continuous)
-                .strokeBorder(Palette.hairline, lineWidth: 1)
+                .strokeBorder(Palette.rule, lineWidth: 1)
         )
     }
 
-    /// Área táctil mínima. El manual no la negocia: 44 pt, que es lo que
-    /// Apple llama 48 px en la web.
+    /// Área táctil mínima de la v1.
+    @available(*, deprecated, renamed: "hitTarget()", message: "Fachada de la v1: usa .hitTarget()")
     func minimumHitTarget() -> some View {
-        self.contentShape(Rectangle())
-            .frame(minWidth: 44, minHeight: 44)
+        hitTarget()
     }
 }
 
-/// Medidas compartidas del tablero.
-enum Metrics {
-    /// Ancho de la columna del distintivo de línea. El hilo vertical va
-    /// centrado en ella, y por eso lo comparten la insignia y el raíl.
+// MARK: - Medidas viejas del tablero (el hilo vertical de la v1)
+
+extension Metrics {
+    @available(*, deprecated, message: "Fachada de la v1: el hilo vertical no existe en «Cristal»")
     static let railColumn: CGFloat = 46
+
+    @available(*, deprecated, message: "Fachada de la v1: usa Metrics.Size.badgeLarge")
     static let badgeSize: CGFloat = 42
+
+    @available(*, deprecated, message: "Fachada de la v1: el hilo vertical no existe en «Cristal»")
     static let railWidth: CGFloat = 5
 }
