@@ -197,3 +197,49 @@ al final de cada sección.
   Linux, que apenas gasta). Si lo quieres público:
   `gh repo edit Ismaeloul/trajet-server --visibility public --accept-visibility-change-consequences`.
 
+
+### D3.2 · Cómo se construyó la app (etapas y contratos)
+- **Etapas**: núcleo primero (modelos v1, red, stores, caché, demo, 77
+  tests, compilado en CI antes de repartir), luego tres agentes a la vez con
+  carpetas separadas (tablero y navegación; mapa y modo trayecto; widgets y
+  Live Activity), después las pantallas de rutas, planificador, estadísticas,
+  ajustes y emparejamiento, y por último la integración en CI. Las
+  interfaces entre agentes se fijaron por escrito antes (`docs/app-v2-api.md`
+  y `docs/encargos-fase3/`).
+- **Sin Mac**: todo se compila en GitHub Actions (Xcode 26.6). El código se
+  escribió conservador; los `TODO-COMPILAR` compilaron todos.
+- **`Trajet/Shared` se compila dos veces** (app y extensión) en vez de ir en
+  un framework: menos piezas que firmar con un Apple ID gratuito.
+- **Dos apps con el mismo bundle id** (`Trajet` full y `TrajetLite`): la
+  lite lleva la condición `TRAJET_LITE` y `NSSupportsLiveActivities = false`;
+  la full lleva los entitlements con una firma ad hoc para que el firmador los
+  vea. En tiempo de ejecución la app comprueba si hay App Group
+  (`Capabilities`) y, si no, no ofrece widgets ni Live Activity.
+- **CI por modos** (`compilar` / `completo` / `capturas`) y casi todos los
+  commits con `[skip ci]`: se compila a mano cuando toca. Al hacer público el
+  repo dejó de importar el gasto de minutos.
+
+### D3.3 · Decisiones de comportamiento tomadas por los agentes (revisadas)
+- **Token** en el Llavero con `AfterFirstUnlock` (el modo trayecto necesita
+  leerlo con el iPhone bloqueado); nunca en UserDefaults ni en el App Group.
+- **Ruta fijada no se recuerda** al reabrir la app (como en la v1).
+- **Tramos con la estación caída** conservan las últimas salidas tal cual y
+  se atenúan con su antigüedad (regla 9 por tramo).
+- **Al emparejar** el «Listo» se queda 1,2 s antes de pasar a las pestañas.
+- **La Live Activity pinta solo lo que la app escribió**; al vencer
+  `staleDate` pasa a horas fijas en gris y dice cuándo se quita sola
+  (`endedAt`). En la extensión no hay red ni ubicación.
+- **Widgets = una foto con fecha**: entradas por minuto que siguen bien sin
+  refresco y una final «Sin datos recientes · abre Trajet». Recargas con un
+  mínimo de separación (presupuesto de WidgetKit).
+- **Código de la demo `DEMO-2026`** lleva un 0 que el alfabeto del servidor no
+  admite: la app acepta 8–16 caracteres alfanuméricos y el servidor decide.
+- **«Emparejar de nuevo»** deja el dispositivo viejo en la lista del panel (no
+  hay forma de retirar la llave vieja desde la app); se avisa en pantalla.
+- **Reordenar rutas** hace un PUT por ruta que cambia (no hay API de orden).
+- **Tramos montados a mano no tienen parada de bajada** (como en la v1): la
+  llegada automática del trayecto usa entonces el destino de la ruta.
+- **Distintivos de línea**: RER A/B/D, K/N/V, T6/T9/T14 llevan el código en
+  negro (el blanco oficial no llega a 4,5:1). Coherente en toda la app.
+- **Interruptor «Pantalla encendida»** del prototipo B: no se implementa (es
+  una función nueva que el encargo no pide).
