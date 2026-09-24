@@ -1,0 +1,31 @@
+{
+ "base": "http://127.0.0.1:7796",
+ "shots": [
+  {"width": 390, "height": 844, "dpr": 2, "scheme": "light", "reducedMotion": true, "url": "/", "loadMs": 2500,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});document.getElementById('pair-start').click();",
+   "waitMs": 243000, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/20-emparejar-ultimo-minuto-movil-claro.png"},
+  {"width": 390, "height": 844, "dpr": 2, "scheme": "dark", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/20-emparejar-ultimo-minuto-movil-oscuro.png"},
+  {"width": 1440, "height": 900, "dpr": 2, "scheme": "light", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/20-emparejar-ultimo-minuto-pc-claro.png"},
+  {"width": 1440, "height": 900, "dpr": 2, "scheme": "dark", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/20-emparejar-ultimo-minuto-pc-oscuro.png"},
+
+  {"width": 390, "height": 844, "dpr": 2, "scheme": "light", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 62000, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/21-emparejar-caducado-movil-claro.png"},
+  {"width": 390, "height": 844, "dpr": 2, "scheme": "dark", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/21-emparejar-caducado-movil-oscuro.png"},
+  {"width": 1440, "height": 900, "dpr": 2, "scheme": "light", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/21-emparejar-caducado-pc-claro.png"},
+  {"width": 1440, "height": 900, "dpr": 2, "scheme": "dark", "reducedMotion": true, "url": "/", "sameUrl": true,
+   "eval": "document.querySelector('#emparejar').scrollIntoView({block:'start'});", "waitMs": 500, "selector": "#emparejar",
+   "out": "docs/capturas/panel-fase4/21-emparejar-caducado-pc-oscuro.png"}
+ ]
+}

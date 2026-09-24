@@ -22,7 +22,7 @@ está simulado en el HTML: cada estado sale del servidor real.
 
 Las de una sección van **recortadas a la tarjeta**; las de pantalla entera
 (`01`, `07`, `08`, `19`) enseñan el panel completo a ese tamaño. Cada número
-existe en las cuatro combinaciones (76 PNG en total).
+existe en las cuatro combinaciones (84 PNG en total).
 
 ## Qué es cada una
 
@@ -47,6 +47,8 @@ existe en las cuatro combinaciones (76 PNG en total).
 | 17 | `17-ajustes-*` | «Ajustes del QR» con el nombre y las dos direcciones guardadas. |
 | 18 | `18-ajustes-error-*` | Se intenta guardar `http://192.168.1.10:7796/api`: el panel lo rechaza antes de mandarlo («Solo host y puerto, sin ruta…») y marca el campo. |
 | 19 | `19-sin-conexion-*` | El servidor no responde (se ha cortado `fetch`): franja «No hay conexión con el servidor. Se enseña lo último que se supo.» con «Reintentar», píldora «Sin conexión» y los datos anteriores intactos. |
+| 20 | `20-emparejar-ultimo-minuto-*` | El QR lleva 4 min en pantalla sin que nadie lo canjee: la cuenta atrás baja de 1:00 y pasa a ámbar (`data-tone="warn"`), con la barra casi vacía. Esperado de verdad (nada acelerado). |
+| 21 | `21-emparejar-caducado-*` | Pasados los 5 min: el último sondeo devuelve `status: expired` y la tarjeta pasa a «Caducado» con el reloj y «Generar otro». |
 
 ## GIF
 
@@ -67,9 +69,21 @@ se funden y su tiempo se suma, por eso tienen menos «frames» de los capturados
 cd trajet-server
 env -u PRIM_API_KEY docker compose up --build -d      # panel en http://127.0.0.1:7796
 # guarda antes dos direcciones en «Ajustes del QR» (el plan da por hecho que están)
-node ..\design-lab\tools\capturar.mjs plan.json     # el plan se genera con el script de la FASE 4 (ver fase4-panel.md)
+cd ..
+python docs/capturas/panel-fase4/plan_capturas.py docs/capturas/panel-fase4 > plan.json
+node design-lab/tools/capturar.mjs plan.json                                # 01-19 y los 4 GIF (unos 4 min)
+node design-lab/tools/capturar.mjs docs/capturas/panel-fase4/plan-caducado.json   # 20 y 21 (5 min de espera real)
+cd trajet-server
 env -u PRIM_API_KEY docker compose down -v
 ```
+
+`plan_capturas.py` genera el plan de las 01-19 y los GIF (cuatro pasadas, una
+por tamaño y modo, cada una con su propio recorrido). `plan-caducado.json`
+genera un QR, espera 4 min para la 20 y otro minuto para la 21, y captura la
+misma página en las cuatro combinaciones. Mientras corre **no generes otro QR**
+desde otro navegador: el servidor anula el anterior y la captura saldría como
+«Código anulado» (es lo que hace el panel cuando el código se anula desde otro
+sitio).
 
 Las capturas de la FASE 1 (maquetas del panel antes de probarlo) siguen en
 [`../panel/`](../panel/).
