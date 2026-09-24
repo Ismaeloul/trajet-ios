@@ -233,17 +233,24 @@ class TrajetUITestCase: XCTestCase {
         campo.typeText(texto)
     }
 
-    /// Cierra el teclado si está a la vista.
+    /// Recoge el teclado si está a la vista. Los formularios de SwiftUI lo
+    /// recogen al desplazarse: un arrastre corto hacia ARRIBA sobre el
+    /// contenido, por encima del teclado (hacia abajo no: en una hoja la
+    /// cerraría). Con el teclado puesto, un botón del final del formulario
+    /// queda debajo y tocarlo no hace nada.
     @MainActor
     func cerrarTeclado() {
-        if app.keyboards.count > 0 {
-            let done = app.keyboards.buttons["Hecho"]
-            if done.exists {
-                done.tap()
-            } else {
-                app.tap()
-            }
+        // El aviso «desliza para escribir» del simulador, si saliera (el CI
+        // lo apaga en scripts/ci-sim.sh).
+        let skip = app.buttons["Continue"]
+        if skip.exists {
+            skip.tap()
         }
+        guard app.keyboards.count > 0 else { return }
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+        start.press(forDuration: 0.05, thenDragTo: end)
+        pausa(0.5)
     }
 
     /// El botón de atrás de la barra de navegación.

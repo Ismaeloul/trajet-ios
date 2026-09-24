@@ -4,8 +4,8 @@
 # (CapturasUITests) no van aqui: las lanza ci-capturas.sh en el modo «capturas».
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# ci-sim.sh crea el simulador, lo arranca y apaga el aviso del teclado.
 UDID=$(bash scripts/ci-sim.sh "iPhone 16" Trajet-tests)
-xcrun simctl boot "$UDID" 2>/dev/null || true
 xcodebuild test-without-building \
   -project Trajet.xcodeproj -scheme Trajet \
   -destination "id=$UDID" \

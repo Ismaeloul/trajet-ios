@@ -164,10 +164,12 @@ struct ManualPairingView: View {
         }
     }
 
+    /// La nota de ATS de cada dirección. En la demo no: su dirección es de
+    /// mentira y la nota confundiría (como en Ajustes).
     @ViewBuilder
     private func addressNote(_ raw: String, label: String) -> some View {
         let kind = ServerAddressRules.classify(raw)
-        if let text = ServerAddressRules.note(kind) {
+        if !services.isDemo, let text = ServerAddressRules.note(kind) {
             note("\(label): \(text)", tone: ServerAddressRules.tone(kind))
         }
     }

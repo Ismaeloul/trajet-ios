@@ -112,7 +112,27 @@ struct DepartureTicket: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    /// Hora, retraso, «suprimido» y longitud. Si con la vía y el ritmo al
+    /// lado no cabe todo, la longitud se queda en el símbolo y, si tampoco,
+    /// fuera: nunca una palabra cortada («lar…»). En el detalle sale entera.
     private var meta: some View {
+        ViewThatFits(in: .horizontal) {
+            metaRow(length: .word)
+            metaRow(length: .symbol)
+            metaRow(length: .hidden)
+        }
+        .textLevel(.meta)
+        .foregroundStyle(ink2)
+        .lineLimit(1)
+    }
+
+    private enum MetaLength {
+        case word
+        case symbol
+        case hidden
+    }
+
+    private func metaRow(length lengthStyle: MetaLength) -> some View {
         HStack(spacing: Metrics.Space.sm) {
             if !departure.at.isEmpty {
                 Text(departure.at)
@@ -127,16 +147,15 @@ struct DepartureTicket: View {
                     .fontWeight(.bold)
                     .foregroundStyle(atStop ? ink : Palette.ticketWarn)
             }
-            if let length = departure.length {
+            if let length = departure.length, lengthStyle != .hidden {
                 HStack(spacing: 3) {
                     Image(systemName: length.symbol)
-                    Text(BoardText.length(length))
+                    if lengthStyle == .word {
+                        Text(BoardText.length(length))
+                    }
                 }
             }
         }
-        .textLevel(.meta)
-        .foregroundStyle(ink2)
-        .lineLimit(1)
     }
 
     private var side: some View {

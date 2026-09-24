@@ -7,7 +7,7 @@
 #   compilar  solo comprueba que TODO compila (app, lite, extension y tests)
 #   completo  compilar + IPA full y lite + tests unitarios y de interfaz
 #   capturas  completo + capturas en iPhone SE, 16 y 16 Pro Max, claro y
-#             oscuro y letra grande
+#             oscuro y letra grande (trabajos en paralelo, ver abajo)
 # Un push hace «completo»; a mano (Run workflow) se elige.
 name: iOS
 
@@ -36,9 +36,9 @@ env:
 jobs:
   ios:
     runs-on: macos-latest
-    # «capturas» son 7 pasadas de simulador (3 modelos x claro/oscuro + letra
-    # grande) detras de compilar, las IPA y los tests: cerca de una hora.
-    timeout-minutes: 120
+    # Compilar (4 min), las IPA (3 min) y los tests unitarios y de interfaz
+    # (unos 25 min).
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -96,14 +96,6 @@ jobs:
           set -euo pipefail
           bash scripts/ci-tests.sh
 
-      # Con que compile basta: si falla un test de flujo, las capturas se
-      # hacen igual (sirven para ver que ha pasado).
-      - name: Capturas
-        if: env.MODO == 'capturas' && !cancelled() && steps.compilar.outcome == 'success'
-        run: |
-          set -euo pipefail
-          bash scripts/ci-capturas.sh
-
       - name: Resumen de tests (si fallan)
         if: failure() && env.MODO != 'compilar'
         run: |
@@ -123,34 +115,12 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Subir capturas
-        if: env.MODO == 'capturas' && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trajet-capturas-${{ github.run_number }}
-          path: build/capturas
-          if-no-files-found: warn
-          retention-days: 30
-
       - name: Subir resultados de tests
         if: env.MODO != 'compilar' && always()
         uses: actions/upload-artifact@v4
         with:
           name: Trajet-xcresult-${{ github.run_number }}
           path: build/tests.xcresult
-          if-no-files-found: ignore
-          retention-days: 7
-
-      # Los .xcresult de las capturas llevan todas las imagenes dentro: solo
-      # se suben si algo ha fallado, para ver por que.
-      - name: Subir resultados de capturas (si fallan)
-        if: env.MODO == 'capturas' && failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Trajet-capturas-xcresult-${{ github.run_number }}
-          path: |
-            build/capturas-*.xcresult
-            build/capturas-*.log
           if-no-files-found: ignore
           retention-days: 7
 
@@ -173,3 +143,95 @@ jobs:
             --title "Trajet ${GITHUB_REF_NAME}" \
             --notes "IPA sin firmar. full: con widgets y Live Activity (necesita App Group: certificado tipo Signulous). lite: sin extensiones, para firmar con un Apple ID gratuito." \
             || gh release upload "${GITHUB_REF_NAME}" build/ipa/Trajet-full.ipa build/ipa/Trajet-lite.ipa --clobber
+
+  # Las capturas (modo «capturas» o un tag), en paralelo con el trabajo de
+  # arriba y repartidas en cuatro trabajos: cada uno compila lo suyo (4 min)
+  # y hace una o dos pasadas de simulador (20-30 min cada una). Las siete en
+  # fila pasaban de las dos horas. Con «Run workflow» se ven como
+  # «capturas (iphone-16)», etc.; al final se juntan en un solo artefacto
+  # Trajet-capturas-<n>.
+  capturas:
+    if: ${{ github.event.inputs.modo == 'capturas' || startsWith(github.ref, 'refs/tags/v') }}
+    name: capturas (${{ matrix.grupo }})
+    runs-on: macos-latest
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - grupo: iphone-16
+            pasadas: iphone-16-claro iphone-16-oscuro
+          - grupo: iphone-se
+            pasadas: iphone-se-claro iphone-se-oscuro
+          - grupo: iphone-16-pro-max
+            pasadas: iphone-16-pro-max-claro iphone-16-pro-max-oscuro
+          - grupo: letra-grande
+            pasadas: iphone-16-letra-grande
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode mas nuevo de la imagen
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+
+      - name: Generar el proyecto
+        run: |
+          set -euo pipefail
+          brew install xcodegen >/dev/null
+          xcodegen generate --spec project.yml
+
+      - name: Compilar la app y los tests (simulador, Debug)
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild build-for-testing \
+            -project Trajet.xcodeproj -scheme Trajet \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO > build/compilar.log 2>&1 \
+            || { grep -h -E "error:" build/compilar.log | sort -u | head -50; tail -5 build/compilar.log; exit 1; }
+          tail -2 build/compilar.log
+
+      - name: Capturas
+        run: |
+          set -euo pipefail
+          bash scripts/ci-capturas.sh ${{ matrix.pasadas }}
+
+      - name: Subir capturas del grupo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-capturas-${{ github.run_number }}-${{ matrix.grupo }}
+          path: build/capturas
+          if-no-files-found: warn
+          retention-days: 30
+
+      # Los .xcresult de las capturas llevan todas las imagenes dentro (y las
+      # de cada fallo): solo se suben si algo ha fallado, para ver por que.
+      - name: Subir resultados de capturas (si fallan)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-capturas-xcresult-${{ github.run_number }}-${{ matrix.grupo }}
+          path: |
+            build/capturas-*.xcresult
+            build/capturas-*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Un solo artefacto Trajet-capturas-<n> con los cuatro grupos (se descarga
+  # con `gh run download <id> -n Trajet-capturas-<n>`).
+  capturas-juntar:
+    needs: capturas
+    if: ${{ always() && needs.capturas.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: Trajet-capturas-${{ github.run_number }}
+          pattern: Trajet-capturas-${{ github.run_number }}-*
+          delete-merged: true
+          retention-days: 30

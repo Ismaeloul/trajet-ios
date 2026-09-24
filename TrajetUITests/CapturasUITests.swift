@@ -85,8 +85,11 @@ final class CapturasUITests: TrajetUITestCase {
         escribir(Self.demoCode, en: code)
         capturar("04-emparejar-a-mano-codigo", tras: 0.5)
 
+        // El teclado tapa el botón: se recoge y se baja hasta él.
+        cerrarTeclado()
         let send = identificado("emparejar.enviar")
         if ver(send, 5) {
+            desplazarHasta(send)
             send.tap()
         }
         // «Listo» se ve 1,2 s antes de pasar a las pestañas.
@@ -344,13 +347,15 @@ final class CapturasUITests: TrajetUITestCase {
         }
         ver(app.navigationBars["Nueva ruta"], 10, "la ruta nueva")
         capturar("66-ruta-nueva")
+        // En el SE queda fuera de pantalla: se baja hasta él antes de buscarlo.
         let addLeg = app.buttons["Añadir el primer tramo"]
+        desplazarHasta(addLeg)
         if ver(addLeg, 5) {
-            desplazarHasta(addLeg)
             addLeg.tap()
             ver(app.navigationBars["¿Desde qué parada?"], 10, "el paso de la parada")
             capturar("67-tramo-parada")
-            let field = app.textFields.firstMatch
+            // El campo de la hoja, no el del editor que hay detrás.
+            let field = identificado("buscar.campo")
             if ver(field, 5) {
                 escribir("Saint", en: field)
                 let stop = elementoQueEmpieza("Gare Saint-Lazare")
@@ -383,10 +388,11 @@ final class CapturasUITests: TrajetUITestCase {
         }
         ver(app.navigationBars["Rutas"], 10)
 
-        // El planificador de principio a fin.
+        // El planificador de principio a fin. El botón está al final de la
+        // lista de rutas (fuera de pantalla en el SE).
         let search = app.buttons["Buscar un trayecto"]
+        desplazarHasta(search)
         if ver(search, 5, "«Buscar un trayecto»") {
-            desplazarHasta(search)
             search.tap()
         }
         ver(app.navigationBars["Buscar trayecto"], 10, "el planificador")
@@ -396,7 +402,7 @@ final class CapturasUITests: TrajetUITestCase {
             from.tap()
             ver(app.navigationBars["¿Desde dónde?"], 10)
             capturar("75-planificador-buscar-sitio")
-            let field = app.textFields.firstMatch
+            let field = identificado("buscar.campo")
             if ver(field, 5) {
                 escribir("Saint", en: field)
                 let place = elementoQueEmpieza("Gare Saint-Lazare")
@@ -409,7 +415,7 @@ final class CapturasUITests: TrajetUITestCase {
         if ver(to, 5) {
             to.tap()
             ver(app.navigationBars["¿Hasta dónde?"], 10)
-            let field = app.textFields.firstMatch
+            let field = identificado("buscar.campo")
             if ver(field, 5) {
                 escribir("Paris", en: field)
                 let place = elementoQueEmpieza("12 Rue de Paris")
@@ -459,7 +465,7 @@ final class CapturasUITests: TrajetUITestCase {
         let gear = app.buttons["Ajustes"]
         if ver(gear, 10, "el botón de Ajustes") { gear.tap() }
         ver(app.navigationBars["Ajustes"], 10, "Ajustes")
-        ver(elementoQueContiene("Clave de PRIM"), 10)
+        ver(app.staticTexts["Servidor"], 10, "la sección del servidor")
         capturar("85-ajustes-servidor")
         desplazar(0.55)
         capturar("86-ajustes-estado-y-cuota")
@@ -478,9 +484,11 @@ final class CapturasUITests: TrajetUITestCase {
         let gear2 = app.buttons["Ajustes"]
         if ver(gear2, 10) { gear2.tap() }
         ver(app.navigationBars["Ajustes"], 10)
-        ver(elementoQueContiene("sin clave"), 10)
+        ver(app.staticTexts["Servidor"], 10)
         capturar("91-ajustes-servidor-sin-clave")
-        desplazar(0.55)
+        // El estado del servidor está más abajo (la lista solo tiene lo que se ve).
+        desplazarHasta(elementoQueContiene("sin clave"))
+        ver(elementoQueContiene("sin clave"), 10, "el estado «sin clave»")
         capturar("92-ajustes-servidor-sin-clave-estado")
         app.buttons["Cerrar"].tap()
 
@@ -488,9 +496,10 @@ final class CapturasUITests: TrajetUITestCase {
         tablero("cincoTramos")
         let gear3 = app.buttons["Ajustes"]
         if ver(gear3, 10) { gear3.tap() }
+        ver(app.navigationBars["Ajustes"], 10)
         let repair = app.buttons["Emparejar de nuevo"]
+        desplazarHasta(repair)
         if ver(repair, 10, "«Emparejar de nuevo»") {
-            desplazarHasta(repair)
             repair.tap()
             ver(app.buttons["Escanear el QR"], 10)
             capturar("93-ajustes-emparejar-de-nuevo")

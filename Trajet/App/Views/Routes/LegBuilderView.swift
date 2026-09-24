@@ -410,6 +410,7 @@ struct SearchFieldRow: View {
                 .autocorrectionDisabled()
                 .submitLabel(.search)
                 .focused(focused)
+                .accessibilityIdentifier("buscar.campo")
             if !text.isEmpty {
                 Button {
                     text = ""

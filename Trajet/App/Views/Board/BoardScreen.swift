@@ -131,9 +131,37 @@ struct BoardScreen: View {
             }
             .safeAreaInset(edge: .top, spacing: 0) {
                 header
+                    .background(alignment: .top) {
+                        statusBarVeil(topInset: topInset)
+                    }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    /// Velo bajo la barra de estado: lo que se desplaza por debajo de la
+    /// cabecera se difumina y se funde con el fondo antes de llegar a la hora
+    /// y la batería (la cabecera flota, así que el sistema no pone su propio
+    /// borde). Un poco más alto que la barra, para que el final quede detrás
+    /// del cristal de la cabecera.
+    private func statusBarVeil(topInset: CGFloat) -> some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .overlay {
+                LinearGradient(colors: [Palette.bg.opacity(0.8), Palette.bg.opacity(0)],
+                               startPoint: .top, endPoint: .bottom)
+            }
+            .mask {
+                LinearGradient(stops: [.init(color: .black, location: 0),
+                                       .init(color: .black, location: 0.6),
+                                       .init(color: .clear, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+            }
+            .frame(height: topInset + Metrics.Space.sm)
+            .frame(maxWidth: .infinity)
+            .ignoresSafeArea(edges: .top)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     /// El hueco transparente por el que se ve el mapa (B: 34 % de la

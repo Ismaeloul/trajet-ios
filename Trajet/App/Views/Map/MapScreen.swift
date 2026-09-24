@@ -123,7 +123,11 @@ struct MapScreen: View {
                 }
                 .cristalButton(circle: true)
                 .accessibilityLabel("Encuadrar la ruta")
+                // El botón del sistema va desnudo: se le pone el mismo
+                // círculo de cristal que a «Encuadrar».
                 MapUserLocationButton(scope: mapScope)
+                    .frame(width: Metrics.Size.glassButton, height: Metrics.Size.glassButton)
+                    .cristal(.control, in: Circle())
                     .accessibilityLabel("Mi posición")
             }
         }

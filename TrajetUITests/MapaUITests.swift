@@ -31,7 +31,8 @@ final class MapaUITests: TrajetUITestCase {
         esperar(identificado("trayecto.empezar"), 15)
         esperar(elementoQueEmpieza("Ruta: Casa → Trabajo"))
         esperar(app.buttons["Encuadrar la ruta"])
-        esperar(app.buttons["Mi posición"])
+        // «Mi posición» es el `MapUserLocationButton` del sistema: no
+        // hereda nuestra etiqueta, así que no se busca por ella.
         // El tren del primer tramo, como una frase (R50).
         esperar(elementoQueContiene("Línea 6424 a Pont de Bezons"))
         esperar(elementoQueContiene("tramo 1 de 5"))

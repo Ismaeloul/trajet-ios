@@ -115,7 +115,9 @@ final class RutasYAjustesUITests: TrajetUITestCase {
         esperar(app.buttons["Probar conexión"])
         esperar(app.staticTexts["Este iPhone"])
         // El estado del servidor llega del /health de la demo (sin cuota).
-        esperar(app.staticTexts["Estado del servidor"])
+        // Está más abajo: la lista solo tiene lo que se ve, hay que bajar.
+        XCTAssertTrue(desplazarHasta(app.staticTexts["Estado del servidor"]),
+                      "No se llega al estado del servidor")
         esperar(elementoQueContiene("Clave de PRIM"), 10)
         // Abajo: el modo trayecto, permisos y la versión.
         let version = app.staticTexts["Versión de la app"]

@@ -26,10 +26,13 @@ final class EmparejamientoUITests: TrajetUITestCase {
 
         escribir(Self.demoCode, en: code)
         XCTAssertTrue(send.isEnabled, "Con el código escrito se puede emparejar")
+        // El teclado tapa el botón: se recoge y se baja hasta él.
+        cerrarTeclado()
+        XCTAssertTrue(desplazarHasta(send), "El botón de emparejar no se puede tocar")
         send.tap()
 
-        // Emparejado: «Listo» y, tras un momento, las pestañas.
-        esperar(pestana("Tablero"), 20)
+        // Emparejado: «Listo» 1,2 s y, tras fundir, las pestañas.
+        esperar(pestana("Tablero"), 25)
         esperar(app.buttons["Ajustes"], 10)
         esperar(identificado("tablero.tramo.0"), 15)
         esperar(identificado("tablero.empezar"), 10)
@@ -47,8 +50,11 @@ final class EmparejamientoUITests: TrajetUITestCase {
         escribir("ABCD-EFGH", en: code)
         let send = identificado("emparejar.enviar")
         esperar(send)
+        cerrarTeclado()
+        XCTAssertTrue(desplazarHasta(send), "El botón de emparejar no se puede tocar")
         send.tap()
 
+        // El fallo, diseñado, en la misma hoja (PairingText.failure).
         esperar(elementoQueContiene("Ese código ya no vale"), 10)
         // Sigue en la hoja: el campo del código está ahí.
         XCTAssertTrue(code.exists)
