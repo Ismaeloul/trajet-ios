@@ -168,3 +168,15 @@ al final de cada sección.
   estado diseñado), `prim_key_invalid`, `prim_quota_exhausted`,
   `prim_unreachable`/`upstream` → se queda el último tablero y se dice por qué.
 - `server.refresh_hint_s` manda sobre los 30 s (nunca por debajo de 30).
+- **ATS sin `NSAllowsArbitraryLoads`** (investigado antes de la FASE 3):
+  desde iOS 17, ATS se aplica también a direcciones IP y
+  `NSAllowsLocalNetworking` solo exime las redes locales (RFC 1918,
+  link-local, `.local` y nombres sin dominio). El rango de Tailscale
+  (100.64.0.0/10, CGNAT) **no** es local. Desde iOS 17, `NSExceptionDomains`
+  acepta claves CIDR, así que la excepción queda acotada a:
+  `NSAllowsLocalNetworking` + `NSExceptionDomains` `100.64.0.0/10` y `ts.net`
+  (con subdominios; para los nombres MagicDNS) con HTTP permitido. Nada más.
+  Fuentes: [foro de Apple, «ATS: changes in iOS/tvOS 17»](https://developer.apple.com/forums/thread/747421),
+  [issue sobre Tailscale y ATS](https://github.com/Untrivial-ai/agent-orchestrator/issues/3852),
+  [PR que lo resuelve con CIDR](https://github.com/Untrivial-ai/agent-orchestrator/pull/5488).
+  Encaja con el mínimo de iOS 17 del encargo.
