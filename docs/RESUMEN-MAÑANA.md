@@ -4,6 +4,38 @@
 > la sesión se para **a mitad de la FASE 3**. Todo lo hecho está en git (o en
 > disco, si una etapa se cortó a medias). Abajo, cómo retomar.
 
+## Estado al parar (24-09-2026, tarde, cuota semanal al 99 %)
+
+| fase | estado |
+|---|---|
+| 0 · Código y análisis | ✅ Parada 1 |
+| 1 · Servidor 0.4.0 | ✅ 620 tests, CI verde, verificado · Parada 2 |
+| 2 · Diseño «Cristal» + Live Activity y widgets | ✅ variante A · Parada 3 |
+| 3 · App iOS | 🟡 **todo escrito y compilando**; falta cerrar capturas y verificación |
+| 4 · Panel en el navegador | ✅ `docs/fase4-panel.md` · Parada 4b |
+| 5 · Entrega | 🟡 README de app y servidor al día, `reglas.md` con su test, icono nuevo; falta este resumen definitivo |
+
+### FASE 3: lo hecho y lo que falta
+- ✅ App completa: tablero, mapa y modo trayecto, widgets y Live Activity,
+  rutas, planificador, estadísticas, ajustes y emparejamiento. Compila en CI;
+  **300 tests unitarios en verde** (ejecución `35983964773`); IPA full y lite.
+- ✅ Tests de interfaz escritos (emparejar, tablero, trayecto, mapa,
+  alternativas, rutas y ajustes) y `docs/pruebas-iphone.md` completo.
+- ✅ Icono nuevo «Cristal» (`design-lab/capturas/icono.png`).
+- 🟡 Pasada de capturas en CI (ejecución `36005816833`) en marcha al parar:
+  si terminó, las capturas están en su artefacto `Trajet-capturas-N`. Un
+  agente iba a revisarlas y copiar una selección a `docs/capturas/app/`; puede
+  que no llegase.
+- ⬜ Verificación independiente de la FASE 3 (encargo listo:
+  `docs/encargos-fase3/07-verificacion-fase3.workflow.js`) y Parada 4.
+
+### Para retomar
+1. `git status` / `git log` y mira la última ejecución de CI de `trajet-ios`.
+2. Si las capturas fallaron o no se revisaron: relanzar
+   `docs/encargos-fase3/05-tests-interfaz-y-capturas.txt` en modo reanudación.
+3. Lanzar la verificación (`07-verificacion-fase3.workflow.js`), arreglar lo
+   que encuentre, Parada 4 y este resumen definitivo.
+
 ## Qué está hecho
 
 | fase | estado | dónde |
