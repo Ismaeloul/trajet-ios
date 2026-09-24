@@ -201,3 +201,27 @@ consola** en todas las pasadas. Muestrario del sistema en
   actualizaciones se pierden con el iPhone bloqueado.
 - La sesión se cortó una vez por el límite de uso a mitad de la FASE 2; se
   retomó sin perder nada (lo hecho estaba en disco).
+
+---
+
+## Parada 4b — FASE 4: el panel en el navegador (24-09-2026)
+
+- Panel levantado en local con `docker compose` (BD vacía, sin clave PRIM) y
+  probado **como usuario** con el navegador integrado y con Chrome headless
+  (clics reales, consola vigilada): móvil 390×844 y PC 1440×900, claro y
+  oscuro, todas las secciones y estados (QR con cuenta atrás, último minuto,
+  caducado, canjeado → «Emparejado», renombrar y revocar dispositivos → 401
+  con el token revocado, clave PRIM falsa → 422 con motivo y campo vacío,
+  cuota, salud, Ollama, andenes, errores, ajustes del QR con validación, sin
+  conexión y recuperación).
+- **Consola: cero excepciones JS.** Peticiones fallidas: solo las esperadas
+  (422 de la clave falsa y las conexiones rechazadas al parar el contenedor a
+  propósito). La clave nunca aparece en el DOM ni en ninguna respuesta.
+- **Corregido**: a 390 px las casillas de «Salud» y «Andenes» recortaban el
+  valor con puntos suspensivos (commit `645eacc` del servidor, con test).
+  Suite del servidor: **620 en verde**.
+- Capturas y GIF: `docs/capturas/panel-fase4/` (89 PNG + 4 GIF, con README
+  y plan reproducible). Informe: `docs/fase4-panel.md`.
+- No probado: login de Umbrel (no hay Umbrel en local) y el camino con la
+  clave PRIM real por el navegador (cubierto por el test real de la FASE 1).
+

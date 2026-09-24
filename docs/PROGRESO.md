@@ -29,7 +29,7 @@ desde aquí.
   - [x] Núcleo (modelos v1, red, stores, caché, demo, 77 tests)
   - [ ] Etapa B: tablero (B1), mapa y trayecto (B2), widgets y Live Activity (B4) — escritas sin compilar
   - [ ] B3 rutas/planificador/estadísticas/ajustes/emparejamiento · integración en CI · tests de interfaz y capturas · verificación
-- [ ] FASE 4 — Pruebas en navegador
+- [x] FASE 4 — Pruebas en navegador (panel; `docs/fase4-panel.md`)
 - [ ] FASE 5 — CI, documentación y entrega
 
 ## Bitácora
