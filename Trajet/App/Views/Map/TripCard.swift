@@ -270,6 +270,7 @@ struct TripCard: View {
 /// [J] Gare Saint-Lazare → Argenteuil · tramo 2 de 3 · estado de la línea.
 private struct TripCardLegHeader: View {
     let model: TripCardModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let leg = model.leg
@@ -279,7 +280,7 @@ private struct TripCardLegHeader: View {
                 Text(TripCardText.legTitle(leg))
                     .textLevel(.bodyStrong)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(2)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
                 if model.legCount > 1 {
                     Text("tramo \(model.legIndex + 1) de \(model.legCount)")
                         .textLevel(.footnote)

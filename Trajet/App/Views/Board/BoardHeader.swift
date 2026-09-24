@@ -16,6 +16,8 @@ struct BoardHeader: View {
     let onSelect: (Int?) -> Void
     let onSettings: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var title: String {
         if let name = board?.route?.name, !name.isEmpty { return name }
         if let pinnedRouteID, let route = routes.first(where: { $0.id == pinnedRouteID }) { return route.name }
@@ -74,10 +76,12 @@ struct BoardHeader: View {
             }
         } label: {
             HStack(spacing: Metrics.Space.xs) {
+                // Con letra de accesibilidad el nombre puede ir en dos líneas
+                // («Saint-Lazare…» no).
                 Text(BoardTitleText.route(title))
                     .textLevel(.routeTitle)
                     .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
                     .minimumScaleFactor(0.8)
                 Image(systemName: "chevron.down")
                     .font(.footnote.weight(.bold))

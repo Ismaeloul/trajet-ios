@@ -77,6 +77,16 @@ class TrajetUITestCase: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", trozo)).firstMatch
     }
 
+    /// Cualquier elemento cuya etiqueta contenga algo que case con la
+    /// expresión regular (para las horas, que la demo pone según el reloj).
+    @MainActor
+    func elementoQueCasa(_ regex: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", ".*" + regex + ".*")).firstMatch
+    }
+
+    /// Una hora «HH:MM» cualquiera, para `elementoQueCasa`.
+    static let hora = "[0-9]{2}:[0-9]{2}"
+
     /// Un botón cuya etiqueta empiece por ese texto («Buscar alternativa…»).
     @MainActor
     func botonQueEmpieza(_ prefijo: String) -> XCUIElement {

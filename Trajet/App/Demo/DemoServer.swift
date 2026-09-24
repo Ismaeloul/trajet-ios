@@ -253,7 +253,7 @@ final class DemoServer: URLProtocol, @unchecked Sendable {
             var shown = c
             // La vía aparece a los 20 s de abrir la demo (R2).
             if c == .viaAparece, Date().timeIntervalSince(launchedAt) < 20 { shown = .viaProbable }
-            return .json(status: 200, body: PreviewData.boardJSON(shown),
+            return .json(status: 200, body: DemoClock.realign(json: PreviewData.boardJSON(shown)),
                          headers: ["ETag": #"W/"demo-\#(shown.rawValue)""#])
         case .empty:
             return .ok(PreviewData.emptyBoardJSON)
@@ -263,7 +263,7 @@ final class DemoServer: URLProtocol, @unchecked Sendable {
             return .error(.cuotaAgotada)
         case .unpaired:
             // Recién emparejado con DEMO-2026: el tablero de siempre.
-            return .json(status: 200, body: PreviewData.boardJSON(.cincoTramos), headers: [:])
+            return .json(status: 200, body: DemoClock.realign(json: PreviewData.boardJSON(.cincoTramos)), headers: [:])
         case .revoked:
             return .error(.noEmparejado)
         case .offline:
@@ -283,6 +283,72 @@ final class DemoServer: URLProtocol, @unchecked Sendable {
             data.append(buffer, count: n)
         }
         return data
+    }
+}
+
+/// Los datos de prueba tienen las horas fijas («12:56») y los minutos
+/// relativos («en 6 min»), como si el tablero fuera de las 12:50. La app se
+/// fía de la hora para saber si un tren ya se ha ido (tarjeta del trayecto,
+/// Live Activity, widgets): pasadas las 12:56 de verdad, la demo enseñaba
+/// «Sin salidas de este tramo». Aquí se recolocan las horas para que casen
+/// con los minutos contados desde `now` (hora de París); la hora teórica se
+/// mueve lo mismo, así el retraso no cambia. Lo que no sea una hora «HH:MM»
+/// (los casos límite, a propósito mal formados) se deja como está.
+enum DemoClock {
+    /// El tablero JSON de `PreviewData` con las horas recolocadas. Si el JSON
+    /// no se entiende, se devuelve tal cual.
+    static func realign(json: String, now: Date = .now) -> String {
+        guard var root = (try? JSONSerialization.jsonObject(with: Data(json.utf8))) as? [String: Any],
+              var legs = root["legs"] as? [[String: Any]]
+        else { return json }
+        for i in legs.indices {
+            guard var departures = legs[i]["departures"] as? [[String: Any]] else { continue }
+            for j in departures.indices {
+                var d = departures[j]
+                let minutes = (d["minutes"] as? Int) ?? (d["minutes"] as? String).flatMap(Int.init)
+                guard let minutes, let at = d["at"] as? String, let oldAt = Departure.parisDate(at, near: now)
+                else { continue }
+                let newAt = now.addingTimeInterval(TimeInterval(minutes) * 60)
+                d["at"] = time(newAt)
+                if let aimed = d["aimed_at"] as? String, let oldAimed = Departure.parisDate(aimed, near: now) {
+                    d["aimed_at"] = time(newAt.addingTimeInterval(oldAimed.timeIntervalSince(oldAt)))
+                }
+                departures[j] = d
+            }
+            legs[i]["departures"] = departures
+        }
+        root["legs"] = legs
+        guard let data = try? JSONSerialization.data(withJSONObject: root, options: [.withoutEscapingSlashes]),
+              let text = String(data: data, encoding: .utf8)
+        else { return json }
+        return text
+    }
+
+    /// Un `Board` ya decodificado (la caché de la demo) con las horas
+    /// recolocadas desde `now` (cuando «llegó»).
+    static func realign(board: Board, now: Date) -> Board {
+        var result = board
+        for i in result.legs.indices {
+            for j in result.legs[i].departures.indices {
+                var d = result.legs[i].departures[j]
+                guard let oldAt = Departure.parisDate(d.at, near: now) else { continue }
+                let newAt = now.addingTimeInterval(TimeInterval(d.minutes) * 60)
+                if let oldAimed = Departure.parisDate(d.aimedAt, near: now) {
+                    d.aimedAt = time(newAt.addingTimeInterval(oldAimed.timeIntervalSince(oldAt)))
+                }
+                d.at = time(newAt)
+                result.legs[i].departures[j] = d
+            }
+        }
+        return result
+    }
+
+    /// «HH:MM» en hora de París, como lo escribe el servidor.
+    static func time(_ date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Paris") ?? .current
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)
     }
 }
 
@@ -306,8 +372,11 @@ extension AppServices {
         let api = TrajetAPI(config: config, tokens: tokens,
                             session: TrajetAPI.makeSession(protocolClasses: [DemoServer.self]))
         let sinCache = ProcessInfo.processInfo.arguments.contains("-demoSinCache")
-        let cached = sinCache ? nil : scenario.cachedBoard.map {
-            PreviewData.cached($0, receivedSecondsAgo: 240)
+        let cached = sinCache ? nil : scenario.cachedBoard.map { c -> CachedBoard in
+            // Llegó hace 4 min: las horas de sus trenes, contadas desde entonces.
+            let receivedAt = Date().addingTimeInterval(-240)
+            return CachedBoard(board: DemoClock.realign(board: PreviewData.board(c), now: receivedAt),
+                               receivedAt: receivedAt, routeID: nil)
         }
         return AppServices(config: config, api: api, tokens: tokens,
                            persistence: .memory(cached), mapDirectory: nil, isDemo: true)

@@ -23,8 +23,8 @@ final class TableroUITests: TrajetUITestCase {
             esperar(identificado("tablero.tramo.\(seq)"))
         }
         // El bus con retraso: «+11 min» en el billete (R14) y la frase entera
-        // de VoiceOver (R50).
-        esperar(elementoQueContiene("Bus a Pont de Bezons, en 6 minutos, a las 12:56, 11 minutos de retraso"))
+        // de VoiceOver (R50). La hora la pone la demo según el reloj.
+        esperar(elementoQueCasa("Bus a Pont de Bezons, en 6 minutos, a las \(Self.hora), 11 minutos de retraso"))
         // El tranvía sin salidas y la línea normal: «Servicio finalizado» (R25).
         esperar(elementoQueEmpieza("Servicio finalizado"))
 
@@ -52,7 +52,7 @@ final class TableroUITests: TrajetUITestCase {
         arrancarTablero("viaProbable")
         // El billete lo dice como una frase (R50): «vía 21 probable, 90 por ciento».
         esperar(elementoQueContiene("vía 21 probable, 90 por ciento"))
-        XCTAssertFalse(elementoQueContiene("Tren a Ermont - Eaubonne, en 7 minutos, a las 12:57, vía 21,").exists,
+        XCTAssertFalse(elementoQueCasa("Tren a Ermont - Eaubonne, en 7 minutos, a las \(Self.hora), vía 21,").exists,
                        "Una vía probable nunca se lee como vía real")
 
         abrirTramo(0)
@@ -67,8 +67,8 @@ final class TableroUITests: TrajetUITestCase {
     @MainActor
     func testViaRealEnElBillete() {
         arrancarTablero("unTramo")
-        esperar(elementoQueContiene("Tren a Ermont - Eaubonne, en 7 minutos, a las 12:57, vía 21, tren largo."))
-        esperar(elementoQueContiene("en 22 minutos, a las 13:12, vía 21 probable, 90 por ciento"))
+        esperar(elementoQueCasa("Tren a Ermont - Eaubonne, en 7 minutos, a las \(Self.hora), vía 21, tren largo\\."))
+        esperar(elementoQueCasa("en 22 minutos, a las \(Self.hora), vía 21 probable, 90 por ciento"))
     }
 
     /// Bus a 1h46: minutos largos sin «min» (R6), leídos «1 hora y 46 minutos».
@@ -76,8 +76,8 @@ final class TableroUITests: TrajetUITestCase {
     func testBusAUnaHoraCuarentaYSeis() {
         arrancarTablero("bus106")
         esperar(elementoQueContiene("Bus a Sartrouville RER, en 12 minutos"))
-        esperar(elementoQueContiene("en 1 hora, a las 13:50"))
-        esperar(elementoQueContiene("en 1 hora y 46 minutos, a las 14:36, 11 minutos de retraso"))
+        esperar(elementoQueCasa("en 1 hora, a las \(Self.hora)"))
+        esperar(elementoQueCasa("en 1 hora y 46 minutos, a las \(Self.hora), 11 minutos de retraso"))
         esperar(elementoQueContiene("en 2 horas y 45 minutos"))
     }
 

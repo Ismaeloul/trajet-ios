@@ -26,6 +26,7 @@ struct LegCard: View {
     var onOpen: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.Space.m) {
@@ -56,10 +57,12 @@ struct LegCard: View {
                 LineBadge(code: leg.lineCode, color: leg.lineColor, textColor: officialTextColor,
                           size: Metrics.Size.badgeLarge)
                 VStack(alignment: .leading, spacing: Metrics.Space.hair) {
+                    // Con letra de accesibilidad, una línea más antes de
+                    // cortar («Gare d'Argenteui…» no).
                     Text(BoardTitleText.arrow(from: BoardText.legTitle(leg).from, to: BoardText.legTitle(leg).to))
                         .textLevel(.legTitle)
                         .foregroundStyle(Palette.ink)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 2)
                         .multilineTextAlignment(.leading)
                     if let subtitle = BoardText.legSubtitle(leg) {
                         Text(subtitle)

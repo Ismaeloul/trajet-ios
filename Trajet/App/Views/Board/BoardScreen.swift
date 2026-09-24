@@ -146,14 +146,14 @@ struct BoardScreen: View {
     /// del cristal de la cabecera.
     private func statusBarVeil(topInset: CGFloat) -> some View {
         Rectangle()
-            .fill(.ultraThinMaterial)
+            .fill(.regularMaterial)
             .overlay {
-                LinearGradient(colors: [Palette.bg.opacity(0.8), Palette.bg.opacity(0)],
+                LinearGradient(colors: [Palette.bg.opacity(0.92), Palette.bg.opacity(0.35)],
                                startPoint: .top, endPoint: .bottom)
             }
             .mask {
                 LinearGradient(stops: [.init(color: .black, location: 0),
-                                       .init(color: .black, location: 0.6),
+                                       .init(color: .black, location: 0.72),
                                        .init(color: .clear, location: 1)],
                                startPoint: .top, endPoint: .bottom)
             }

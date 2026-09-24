@@ -201,6 +201,8 @@ struct AlternativeOptionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.Space.m) {
             HStack(alignment: .firstTextBaseline, spacing: Metrics.Space.sm) {
+                // La cifra y la diferencia no se parten nunca («5» / «9» con
+                // letra grande): si no cabe, las horas de la derecha ceden.
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text(Fmt.minutes(option.totalMinutes))
                         .numberFont(.stat)
@@ -211,16 +213,21 @@ struct AlternativeOptionCard: View {
                             .foregroundStyle(Palette.ink3)
                     }
                 }
+                .lineLimit(1)
+                .fixedSize()
                 if let delta = option.deltaLabel {
                     Text(delta)
                         .textLevel(.status)
                         .foregroundStyle((option.deltaMinutes ?? 0) > 0 ? Palette.warnText : Palette.ink2)
+                        .lineLimit(1)
+                        .fixedSize()
                 }
                 Spacer(minLength: Metrics.Space.sm)
                 if let times = BoardAlternativesText.times(option) {
                     Text(times)
                         .textLevel(.meta)
                         .foregroundStyle(Palette.ink2)
+                        .multilineTextAlignment(.trailing)
                 }
             }
             VStack(alignment: .leading, spacing: Metrics.Space.sm) {
