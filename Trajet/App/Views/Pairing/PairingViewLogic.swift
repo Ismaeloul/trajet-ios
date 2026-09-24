@@ -277,7 +277,7 @@ enum PairingText {
     static func networkHint(addresses: [String], detail: String) -> String? {
         let kinds = addresses.map(ServerAddressRules.classify)
         if detail.contains("HTTPS") || kinds.contains(.needsHTTPS) {
-            return "iOS no deja usar por HTTP direcciones que no sean de casa o de Tailscale (100.x o *.ts.net)."
+            return "iOS no deja usar por HTTP direcciones que no sean de casa o de Tailscale (100.x o *.ts.net). Usa una de esas o una con HTTPS."
         }
         var tips: [String] = []
         if kinds.contains(.localNetwork) {
