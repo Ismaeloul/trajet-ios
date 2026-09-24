@@ -144,3 +144,27 @@ al final de cada sección.
   zip, sin bajarlo.
 - No hay caminos a pie entre andenes en los datos abiertos: se da el tiempo
   mínimo de transbordo, no un trazado inventado.
+
+### D1.8 · Verificación independiente de la FASE 1 (lo que cambió)
+- **API 0.3.0 con comprobación de origen**: además del login de Umbrel,
+  `/api/*` solo acepta conexiones del proxy (como el panel). Sin eso,
+  cualquier app de la red Docker de Umbrel podía leer y borrar rutas.
+- **Tablero v1 hueco**: solo es error cuando no llega NADA (todas las
+  estaciones y los avisos). Si llegan los avisos, 200 con los errores: así
+  la app se entera de una línea cortada aunque falle stop-monitoring.
+- **`stale`**: por ritmo de estación, no los 90 s fijos de la 0.3.0 (R19
+  actualizada).
+- **Aceptado sin arreglar**: un tercero en la red podría gastar el cupo de
+  intentos del emparejamiento y hacer esperar 5 min al dueño. No roba nada;
+  los códigos caducan a los 5 min.
+
+### Notas que la FASE 3 (app) tiene que respetar
+- Si un tramo llega con error y sin salidas, la app **conserva las últimas
+  salidas buenas de ese tramo** con su antigüedad y enseña el estado nuevo de
+  la línea (regla 9 por tramo, no solo por tablero).
+- Apagar el tablero (R19): `stale` del servidor o > 90 s sin recibir un
+  tablero; nunca por `data_age` > 90 s.
+- Errores del tablero v1 con código: `prim_key_missing` (servidor sin clave:
+  estado diseñado), `prim_key_invalid`, `prim_quota_exhausted`,
+  `prim_unreachable`/`upstream` → se queda el último tablero y se dice por qué.
+- `server.refresh_hint_s` manda sobre los 30 s (nunca por debajo de 30).

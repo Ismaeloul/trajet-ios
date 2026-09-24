@@ -40,6 +40,8 @@ Lo que no he podido cerrar yo solo, con el detalle para retomarlo.
 
 ## Publicar la 0.4.0 en el Umbrel (lo haces tú)
 
+> **Orden importante**: primero instala y empareja la app nueva del iPhone (FASE 3). Con la 0.4.0 la web desaparece y `/api/*` queda detrás del login de Umbrel: hasta tener el iPhone emparejado no verías el tablero en ningún sitio. Mientras tanto puedes dejar el stack de `~/trajet` (0.3.0) como está.
+
 1. `trajet-server/README.md` → «Desplegar en el Umbrel»: `git pull` en el NAS
    y `bash scripts/publish.sh 0.4.0` (construye y publica en el registro
    local `localhost:5000`).

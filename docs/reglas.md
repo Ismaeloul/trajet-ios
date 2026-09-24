@@ -50,7 +50,7 @@ Convenciones de la tabla:
 | R16 | Ritmo «¿corro o no corro?»: ≤ 3 min, ≤ 8 min, > 8 min | iOS | `FormatTests.testRitmoPorMinutos` | pendiente (fase 5) |
 | R17 | La antigüedad cuenta desde la llegada al teléfono, más `data_age` | iOS | `BoardTests.testAntiguedadDesdeLlegadaAlTelefono` | pendiente (fase 5) |
 | R18 | Antigüedad dicha «hace N s / min / h» | iOS | `FormatTests.testAntiguedadSegundosMinutosHoras` | pendiente (fase 5) |
-| R19 | Dato viejo (stale o > 90 s): se apaga el tablero entero | ambas | `BoardTests.testViejoA90Segundos` · `SnapshotTests.testTableroViejoApagado` · `test_board_stale_tres_refrescos` | pendiente (fase 5) |
+| R19 | Dato viejo (stale del servidor o > 90 s sin recibir tablero): se apaga el tablero entero | ambas | `BoardTests.testViejoA90Segundos` · `SnapshotTests.testTableroViejoApagado` · `test_board_stale_tres_refrescos` | pendiente (fase 5) |
 | R20 | La caché en disco guarda la hora real de llegada | iOS | `BoardCacheTests.testRestauraHoraDeLlegada` | pendiente (fase 5) |
 | R21 | Decodificación tolerante: un JSON raro degrada, no revienta | iOS | `DecodingTests.testCamposAusentesNulosOTipoErroneo` | pendiente (fase 5) |
 | R22 | Tren como cadena o número; `age` antiguo = `data_age` | iOS | `DecodingTests.testTrenNumeroOCadena` · `DecodingTests.testAgeLegadoComoDataAge` | pendiente (fase 5) |
@@ -214,8 +214,8 @@ Enunciados copiados de `PROMPT-trajet-v2.md:94-106`.
 - **Comprobación**: 59,4 → «hace 59 s»; 60 → «hace 1 min»; 3599 → «hace 59 min»; 3600 → «hace 1 h».
 
 ### R19 · Dato viejo: se apaga el tablero entero
-«Con el dato viejo se apaga el tablero entero, no solo una etiqueta» (`Model/Board.swift:331-334`; `Views/Board/BoardView.swift:83-86`: opacidad 0,5 y gris 0,45). Viejo = `stale` del servidor **o** edad > 90 s. El servidor marca `stale` cuando el dato supera 3 refrescos de 30 s (`trajet-server/app/board.py:446`, `config.py:21`). El reloj interno avanza cada 5 s (`BoardView.swift:27-34`).
-- **Comprobación**: edad 90 → vivo; 91 → apagado; `stale: true` con edad 0 → apagado.
+«Con el dato viejo se apaga el tablero entero, no solo una etiqueta» (`Model/Board.swift:331-334`; `Views/Board/BoardView.swift:83-86`: opacidad 0,5 y gris 0,45). Viejo = `stale` del servidor **o** el teléfono lleva más de 90 s sin recibir un tablero nuevo. **Cambio de la v2**: con el TTL adaptativo, una estación con el próximo tren a 40 min se pide cada 5 min y su `data_age` llega a 300 s sin ser un dato viejo; por eso el servidor marca `stale` solo cuando una estación o los avisos superan su propio ritmo de refresco + 60 s o fallan, y la app ya no apaga el tablero por `data_age` > 90 s. La antigüedad que se enseña sigue siendo la real (R17). El reloj interno avanza cada 5 s (`BoardView.swift:27-34`).
+- **Comprobación**: recibido hace 90 s → vivo; 91 s → apagado; `stale: true` recién recibido → apagado; `data_age` 300 con `stale: false` y recibido ahora → vivo.
 
 ### R20 · Caché con hora real de llegada
 «Se guarda el JSON y la hora de llegada por separado: si se recuperase sin la hora, el tablero de anoche parecería recién hecho» (`Store/BoardStore.swift:108-145`).
