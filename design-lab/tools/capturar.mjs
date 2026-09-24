@@ -81,7 +81,10 @@ async function shot(cdp, s, base, errors) {
   let clip;
   if (s.selector) {
     const r = await cdp.send('Runtime.evaluate', { returnByValue: true, expression:
-      `(()=>{const e=document.querySelector(${JSON.stringify(s.selector)}); if(!e) return null; const b=e.getBoundingClientRect(); return {x:b.x,y:b.y,width:b.width,height:b.height};})()` });
+      // El clip de Page.captureScreenshot va en coordenadas del documento, no de
+      // la ventana: se suma el desplazamiento (si no, con la página desplazada
+      // se recorta otra zona, normalmente vacía).
+      `(()=>{const e=document.querySelector(${JSON.stringify(s.selector)}); if(!e) return null; const b=e.getBoundingClientRect(); return {x:b.x+window.scrollX,y:b.y+window.scrollY,width:b.width,height:b.height};})()` });
     if (r.result && r.result.value) clip = { ...r.result.value, scale: 1 };
     else errors.push(`${s.out}: no encuentro ${s.selector}`);
   }
