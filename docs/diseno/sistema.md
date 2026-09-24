@@ -2,9 +2,10 @@
 
 Sistema de diseño de la app iOS de Trajet v2, sacado de la dirección **B
 «Cristal»** del laboratorio (`design-lab/b-cristal/` + `design-lab/shared/`).
-Es la referencia visual y de movimiento de **toda la app salvo la Live
-Activity y los widgets**, que se rediseñan aparte (FASE 2B,
-`docs/diseno/decisiones-la-widgets.md`) con estos mismos tokens.
+Es la referencia visual y de movimiento de **toda la app**. La Live
+Activity y los widgets se rediseñaron aparte (FASE 2B) con estos mismos
+tokens: sus componentes están en **§12** y el porqué, en
+`docs/diseno/decisiones-la-widgets.md` (variante elegida: A «Billete»).
 
 - Lo que B hace mal contra las reglas y cómo se corrige al pasarlo a nativo:
   `docs/diseno/ajustes-b.md`.
@@ -1090,6 +1091,312 @@ hay un comentario `TODO-COMPILAR` con la alternativa segura:
 - [ ] Negrita (`legibilityWeight == .bold`): las cifras ya son heavy; el
       texto lo engorda el sistema.
 - [ ] Modo claro y oscuro siguiendo al sistema.
+
+---
+
+## 12. Live Activity y widgets
+
+Componentes de la variante elegida en la FASE 2B, **A «Billete»**
+(`docs/diseno/decisiones-la-widgets.md`: por qué, estados, límites de iOS y
+enlaces). Laboratorio: `design-lab/b-cristal-v2/` (`?v=A`); capturas:
+`design-lab/capturas/la-widgets/A/`. Usa los tokens de este documento; lo
+propio de la extensión está en §12.2. Las medidas son pt de iOS (1 px del
+laboratorio = 1 pt).
+
+### 12.1 Idea y piezas
+
+Una sola anatomía en todas las superficies: **la cifra** a la izquierda en un
+**billete opaco** (`ticket`, el de §7.2), **la vía en la «matriz»** del billete
+a la derecha, y **una** línea secundaria debajo. El cristal lo pone el sistema
+(fondo de la actividad, widgets tintados); los datos nunca van sobre cristal.
+
+| Pieza | Tamaño (iPhone 16) | Contenido |
+|---|---|---|
+| Live Activity de bloqueo | 371 × **150** (tope 160; 153 con Dynamic Type al tope) | cabecera (distintivo 22, destino, estado de la línea, antigüedad) · billete 56 pt · pie 32 pt (luego / transbordo / cancelado + «Parar») |
+| Compacta | 52,33 + 52,33 (isla de 230) | leading: distintivo 22 (+ símbolo) · trailing: cifra 16 pt + caja de vía de 12 pt |
+| Mínima | 36,67 (45 ovalada) | aro de 2,5 pt del color de la línea con la cifra y «min» |
+| Expandida | 371 × 151–154 | leading: distintivo 24 y destino en una línea · trailing: cifra 38 + matriz de vía 38 × 38 · center: estado, tramo u hora · bottom: luego / transbordo / franja de vía + antigüedad y «Parar» |
+| Widget pequeño | 158 × 158 | cabecera · billete (cifra 54) · vía o «luego» + antigüedad |
+| Widget mediano | 338 × 158 | columna del pequeño (128) · «desde …», 2 filas con destino, antigüedad |
+| Widget grande | 338 × 354 | ruta + antigüedad · un bloque por tramo (billete 56/50/42 + fichas) |
+| Circular | 72 | arco (solo ≤ 30 min) · cifra 24 + «min» · línea y símbolo |
+| Rectangular | 160 × 72 | línea + destino · cifra 27 + vía · antigüedad |
+| En línea | 234 × 26 | «J · 6 min · Vía 21 · hace 5 min» (cae por el final) |
+
+SE (375): actividad 353 de ancho [estimación], sin isla (la alerta sale como
+banner); widgets 148 / 321 × 148 / 321 × 324. Pro Max (440): actividad y
+expandida de 408, compacta de 62,33 por lado, widgets 170 / 364 × 170 / 364 × 382.
+
+### 12.2 Tokens propios de la extensión
+
+Los de §3.1 más el **apagado** (R19). No es opacidad: el billete pasa a un
+gris **opaco** para que cifra y vía conserven el contraste; la caja de la vía
+real sigue llena (forma, R10) pero sin amarillo.
+
+| Token | Uso | Claro | Oscuro | Isla (siempre negra) |
+|---|---|---|---|---|
+| `ticketOff` | billete apagado | `oklch(42% 0.005 260)` → `#4B4D50` | `oklch(72% 0.004 260)` → `#A3A5A7` | — (la cifra va sin billete) |
+| `ticketOffInk` | cifra apagada | `#FFFFFF` (**8,5:1**) | `oklch(12% 0 0)` → `#060606` (**8,2:1**) | `oklch(76% 0.003 260)` → `#B0B1B3` sobre negro (**9,8:1**) |
+| `ticketOffInk2` | «min», hora, longitud apagadas | `oklch(90% 0.004 260)` → `#DCDEE1` (6,3:1) | `oklch(26% 0.005 260)` → `#232426` (6,3:1) | `ink2` de la isla |
+| `viaOff` | caja de la vía real apagada | `oklch(84% 0.004 260)` → `#C9CACD` (5,2:1 contra el billete) | `oklch(36% 0.005 260)` → `#3C3D40` (4,4:1 contra el billete) | `#B0B1B3` |
+| `viaOffInk` | número de la vía apagada | `#090B0F` (**12:1**) | `#FFFFFF` (**10,9:1**) | `#060606` (9,5:1) |
+| `ringOff` | aro de la mínima apagada | — | — | `oklch(58% 0 0)` → `#7A7A7A` |
+| con «Aumentar contraste» | billete apagado | `oklch(36% 0.005 260)` (10,9:1) | `oklch(78% 0.004 260)` (10,1:1) | = |
+
+Contrastes medidos con las fórmulas de `design-lab/tools/tokens.mjs`. Vivo, la
+cifra sobre el billete da 19,7:1 (claro) y 19,2:1 (oscuro); «En andén»,
+`atStopInk` sobre `ok`, 7,9:1. Pasar estos tokens a `tokens.mjs` es trabajo de
+la FASE 3 (van a `Trajet/Design/Tokens.swift`, que comparte la extensión).
+
+### 12.3 Tipografía
+
+| Texto | Talla (pt) | Estilo | Dynamic Type |
+|---|---|---|---|
+| Cifra del billete (actividad) | 44 («ya» 38, «1h46» 34, «En andén» 22) | SF Pro Rounded heavy, dígitos tabulares | fija |
+| Cifra del widget pequeño / mediano | 54 / 50 | ídem | fija; con el texto del sistema, `minimumScaleFactor(0.7)` |
+| Cifra de la expandida / compacta / mínima | 38 / 16 / 15 | ídem | fija (la isla tiene alto fijo) |
+| «min» junto a la cifra | 15 (actividad), 16 (widget), 14 (expandida) | rounded heavy, `ticketInk2` | fija |
+| Hora fija (caducada o ≥ 60 min en widgets) | 28 con «sale a las» a 11 | rounded heavy | fija |
+| Vía: número | 26 matriz · 19 expandida · 20/16/14 chips m/s/xs · 12 mini | rounded black | fija |
+| Vía: palabra («Vía», «probable», «prob.») | **12** en la Live Activity, **11** en widgets (R10, P1-7) | SF Pro 800 | fija |
+| Destino de la cabecera | 16 (actividad), 15 (expandida), 14 (widgets) | 700 | `.dynamicTypeSize(...(.xLarge))` en la actividad y la isla; `...(.xxLarge)` en widgets |
+| Línea secundaria, pie, antigüedad | 13 / 12 (11 la antigüedad del widget pequeño) | 600–700 | ídem |
+| «Parar» | 14 | 700 | ídem |
+
+### 12.4 El estado de la Live Activity (`ActivityAttributes`)
+
+Solo campos de `/api/v1/board` (`BoardV1`, `BoardLegV1`, `Departure`,
+`PlatformGuess`, `LineStatus`, `ServerState`) y lo que la app **deriva** de
+ellos sin inventar (marcado «derivado»). ≈ 1,3 KB con 3 salidas [estimación];
+tope de iOS, 4 KB.
+
+```swift
+struct TrajetActivityAttributes: ActivityAttributes {
+    // Fijo durante todo el trayecto
+    var routeID: Int                  // BoardRoute.id → widgetURL
+    var routeName: String             // BoardRoute.name (estado final)
+
+    struct ContentState: Codable, Hashable {
+        var leg: Leg                  // el tramo que toca (lo decide la app: hora y geocercas)
+        var next: Link?               // el tramo siguiente, si hay transbordo
+        var legIndex: Int             // posición de `leg` en BoardV1.legs (derivado)
+        var legCount: Int             // BoardV1.legs.count (derivado)
+        var receivedAt: Date          // llegada del tablero al teléfono (R17, derivado)
+        var dataAge: Double           // BoardV1.data_age
+        var refreshHint: Int          // BoardV1.server.refresh_hint_s
+        var connection: Connection    // .ok · .offline (fallo de red) · .noKey (ErrorV1 prim_key_missing) — derivado
+        var ended: EndReason?         // .arrived · .maxDuration (solo en el estado final; derivado del modo trayecto)
+    }
+    struct Leg: Codable, Hashable {
+        var seq: Int                  // BoardLegV1.seq
+        var lineCode: String          // line_code
+        var lineColor: String         // line_color (hex)
+        var platformExpected: Bool    // platform_expected (R3)
+        var toName: String            // to_name («Transbordo en …»)
+        var direction: [String]       // abreviar(directions[0] o destination): variantes (derivado)
+        var mixed: Bool               // directions vacío y destinos distintos (R24, derivado)
+        var statusLevel: Int          // status.level
+        var departures: [Dep]         // ≤ 3, en orden
+    }
+    struct Dep: Codable, Hashable {
+        var jid: String               // Departure.jid (identidad, R23)
+        var at: Date                  // Departure.at «HH:MM» en Europe/Paris → fecha (derivado)
+        var minutes: Int              // Departure.minutes (control del redondeo)
+        var destination: [String]     // abreviar(Departure.destination) (derivado)
+        var platform: String?         // Departure.platform
+        var platformNew: Bool         // Departure.platform_new
+        var platformBefore: String?   // vía de la misma jid en el tablero anterior: cambio de vía (derivado)
+        var guessPlatform: String?    // Departure.guess.platform
+        var guessShare: Double?       // Departure.guess.share
+        var delay: Int?               // Departure.delay, solo si aimed_at ≠ "" (R4, R14)
+        var atStop: Bool              // Departure.at_stop (R15)
+        var length: String?           // Departure.length (R5)
+        var cancelled: Bool           // Departure.status == "cancelled" (derivado)
+    }
+    struct Link: Codable, Hashable {  // el tramo siguiente
+        var lineCode: String, lineColor: String, statusLevel: Int
+        var first: Dep?               // su primera salida (hora y vía del enlace)
+    }
+}
+```
+
+Al escribir: `activity.update(ActivityContent(state:staleDate:), alertConfiguration:)`
+con `staleDate` = el primero de (`receivedAt + max(90 s, 2 × refreshHint)`,
+salida del tren enseñado + 60 s, siguiente cambio de minuto + 30 s) y alerta
+solo si la vía aparece o cambia, el tren se cancela o la línea se corta
+(decisiones §5.3–5.4).
+
+### 12.5 Componentes y estados
+
+**Billete** (`TicketView(dep:, context:)`): `ticket` radio 16, alto 56 (50 y
+42 en el widget grande), `HStack`: cifra (mín. 78 de ancho) · dos líneas
+secundarias que caen por prioridad (cambio de vía 7 > retraso 5 > hora 4 >
+longitud 3 > tramo 2; `ViewThatFits`; con cambio de vía cae antes «sale 12:56» y luego se acorta a «antes vía 21») · matriz de vía (62 × 46, margen 5,
+radio 11).
+
+| Estado | Billete |
+|---|---|
+| vivo | `ticket` + `ticketInk`; la cifra la escribe la app (dos tallas) |
+| en el andén | `ok` + `atStopInk`, «En andén» |
+| apagado (`connection ≠ .ok` o `isStale`) | `ticketOff` + `ticketOffInk`; caducado, **hora fija** «sale a las 12:56» |
+| sin salida | `surfaceHi`: «Servicio finalizado · no hay más salidas» (R25) · `bad`: «Sin circulación · toca para ver alternativas» · widgets: «Sin datos recientes · abre Trajet» |
+
+**Vía** (`PlatformMark`): real = caja llena `via` + canto `viaEdge` + «Vía»;
+probable = recuadro punteado (1,5–2 pt, guion [4, 3]) + «probable» / «prob.»;
+nueva = entra con `.transition(.scale(0.3).combined(with: .opacity))` y muelle
+0,7 s; cambiada = igual + «cambio de vía · antes 21». Tallas: matriz (billete),
+`xv` 38 × 38 (expandida), chips m/s/xs, mini 20 × 18 (compacta y mínima, solo
+forma). Apagada: `viaOff`.
+
+**Cabecera** (`HeaderRow`): distintivo (`LineBadge`, §7.5) · destino
+(`ViewThatFits` con las variantes; cae el último) · estado de la línea (⚠ +
+«perturbada»; la palabra cae primero) · antigüedad `Text(fecha, style:
+.relative)` o, en iOS 18, `.reference` — «hace 9 s»; con problema, píldora
+`noticeWarn`/`noticeBad` + símbolo: `clock` (sin actualizar), `wifi.slash`
+(sin conexión), `server.rack` (sin clave).
+
+**Pie** (`FootRow`): «luego» + cifra 19 + vía xs (destino corto si
+`mixed`) · o transbordo `arrow.up.arrow.down` + «en St-Lazare» + distintivo 18
++ hora + vía del enlace · o «✕ el de las 12:56, cancelado» · y «Parar».
+
+**«Parar»**: `Button(intent: StopTripIntent())` con `Label("Parar",
+systemImage: "stop.fill")`; píldora de 32 pt (relleno neutro translúcido: `rule` sobre el fondo del sistema; cuadrado `bad` de 10
+pt), `.frame(minHeight: 44).contentShape(Capsule())`. **Nunca se apaga.**
+
+```swift
+struct StopTripIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Parar el trayecto"
+    func perform() async throws -> some IntentResult {
+        await TripController.shared.stop(reason: .manual)   // end(…, dismissalPolicy: .immediate)
+        return .result()
+    }
+}
+```
+
+Fin automático (llegada o duración máxima): `end(ActivityContent(state: final),
+dismissalPolicy: .after(.now + 15 * 60))` con «Trayecto terminado».
+
+### 12.6 Dynamic Island
+
+```swift
+ActivityConfiguration(for: TrajetActivityAttributes.self) { context in
+    LockScreenActivity(context: context)                  // 12.5
+        .activityBackgroundTint(nil)                       // el del sistema
+        .widgetURL(TrajetLink.leg(context))                // §12.9
+} dynamicIsland: { context in
+    DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) { BadgeAndDestination(context) }      // una línea
+        DynamicIslandExpandedRegion(.trailing) { NumberAndPlatform(context) }       // como la compacta
+        DynamicIslandExpandedRegion(.center) { StatusOrLegOrTime(context) }
+        DynamicIslandExpandedRegion(.bottom) {
+            if context.state.showsPlatformBand { PlatformBand(context) }            // alerta: vía nueva o cambiada (platformNew / platformBefore)
+            else { FootRow(context) }
+            HStack { AgeView(context); Spacer(); StopButton() }
+        }
+    } compactLeading: {
+        LineBadge(context.state.leg, size: 22)                // + símbolo si apagada o perturbada
+    } compactTrailing: {
+        ViewThatFits { CompactNumber(prime: true); CompactNumber(prime: false); CompactNumber(platform: false) }
+    } minimal: {
+        MinimalRing(context)                                  // 36,67 u ovalada hasta 45
+    }
+    .keylineTint(Color(hex: context.state.leg.lineColor))
+    .widgetURL(TrajetLink.leg(context))
+}
+```
+
+- `.dynamicTypeSize(...(.xLarge))` en todo lo de la actividad.
+- `context.isStale` → horas fijas y apagado (§12.5). La vista no calcula la
+  hora: el tren caducado lo elige la foto (decisiones §5.3).
+- Con el texto del sistema (alternativa), la vía de la compacta pasa a la
+  izquierda y la cifra encoge (`minimumScaleFactor`, 0,7 como mucho) antes que ensanchar la isla.
+
+### 12.7 Widgets
+
+```swift
+struct TrajetEntry: TimelineEntry {
+    let date: Date
+    let board: CachedBoard       // BoardV1 + receivedAt, de la caché del App Group
+    let failure: Failure?        // nil · .offline · .noKey (la última recarga falló)
+    let isFinal: Bool            // «Sin datos recientes · abre Trajet»
+}
+
+struct TrajetProvider: TimelineProvider {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TrajetEntry>) -> Void) {
+        // 1. La caché del App Group (la escribe la app en cada refresco).
+        // 2. Si tiene más de 15 min, un /api/v1/board con timeout corto (token del llavero
+        //    compartido); 503 prim_key_missing → .noKey; sin red → .offline; nunca se borra la caché.
+        // 3. Entradas: ahora · cada salida del tramo principal (fusionadas a ≥ 5 min) ·
+        //    salida − 60 min de los trenes lejanos · entrada final al acabarse las salidas.
+        // 4. .after(min(última salida, ahora + 15 min)).
+    }
+}
+```
+
+- Cada entrada pinta las salidas que quedan **tal como llegaron**.
+- La cifra: número suelto del sistema + «min» fijo si se confirma la
+  hipótesis H1 (`.timer(countingDownIn:maxFieldCount: 1, maxPrecision:
+  .seconds(60))`); si no, `durationOffset` con `.units` de una talla; ≥ 60 min,
+  hora fija. iOS 17: `Text(timerInterval:countsDown: true)` con `.frame` fijo.
+- `containerBackground(for: .widget) { Color.surface }` (removible en
+  StandBy y CarPlay); márgenes 14.
+- Anatomía fija del pequeño; «desde X» como una sola pieza; un nivel de
+  abreviatura por widget (`ViewThatFits` sobre todo el bloque de filas).
+- Circular: `ProgressView(timerInterval: salida.addingTimeInterval(-1800)...salida,
+  countsDown: true)` con `.progressViewStyle(.circular)` **solo si faltan ≤ 30
+  min**; si no, la hora fija sin arco. `AccessoryWidgetBackground()` detrás.
+- La app llama a `WidgetCenter.shared.reloadTimelines(ofKind:)` al volver a
+  primer plano, al cambiar de ruta y, en modo trayecto y con cuentagotas,
+  cuando cambia algo que merece alerta.
+
+### 12.8 Modos de pintado
+
+```swift
+@Environment(\.widgetRenderingMode) private var mode
+@Environment(\.isLuminanceReduced) private var alwaysOn
+```
+
+| Modo | Billete | Vía real | Vía probable | Distintivo |
+|---|---|---|---|---|
+| `.fullColor` | opaco `ticket` | caja `via` | punteada | color de la línea |
+| `.accented` (inicio tintado o transparente) | forma blanca `.widgetAccentable()` con la cifra **calada** (`compositingGroup()` + `blendMode(.destinationOut)`) | caja calada dentro del billete | punteada | blanco con el código calado |
+| `.accented`, alternativa «contorno» | trazo de 2 pt | trazo continuo de 2,5 pt | punteada | trazo de 1,5 pt |
+| `.vibrant` (bloqueo) | — | caja llena, número calado | punteada | blanco, código calado |
+| siempre activa (`alwaysOn`) | igual, sin animación | igual | igual | igual |
+
+El calado está por verificar en la extensión (FASE 3); si no se pinta, se
+usa el contorno (`widgetRenderingMode != .fullColor`).
+
+### 12.9 Enlaces
+
+`TrajetLink` construye las URL de decisiones §6: `trajet://ruta/{id}?tramo={seq}`
+para la actividad y los widgets (`&salida={jid}` en las filas del mediano),
+`trajet://ruta/{id}/alternativas` con la línea cortada, `trajet://tablero` en la
+entrada final y `trajet://ajustes/servidor` sin clave. Un `widgetURL` por
+jerarquía; `Link` por fila (mediano) y por tramo (grande). La app los recibe
+en `onOpenURL`.
+
+### 12.10 Movimiento
+
+| Qué | SwiftUI | Con «Reducir movimiento» o siempre activa |
+|---|---|---|
+| La cifra cambia | `.contentTransition(.numericText(countsDown: true))` + `Motion.spring(0.5)` | `.contentTransition(.opacity)` |
+| Aparece o cambia la vía | `.id(platform)` + `.transition(.scale(scale: 0.3).combined(with: .opacity))`, muelle 0,7 s, halo que se apaga en 1,2 s | fundido 0,2 s y anillo fijo |
+| Franja de vía (expandida) | `.transition(.push(from: .bottom))` | fundido |
+| Se apaga (R19) | `.animation(.easeInOut(duration: 0.45), value: isOff)` | sin animación |
+| La isla cambia de forma | la pone el sistema | el sistema |
+
+Todo ≤ 2 s y solo al actualizarse; nada en bucle (§3.7 de las referencias).
+
+### 12.11 Lista de comprobación de la extensión
+
+- [ ] Cifra ≥ 8:1 también apagada; palabra de R10 ≥ 11 pt (12 en la actividad).
+- [ ] La actividad ≤ 160 pt con `.xLarge`; la compacta ≤ 52,33 pt por lado.
+- [ ] «Parar» con 44 pt de área y nunca apagado.
+- [ ] Congelada: ni cambia de tren ni publica vías; caducada, horas fijas.
+- [ ] Widgets: la entrada final existe; la probable sigue probable.
+- [ ] Acentuado y vibrante: real llena y probable punteada, sin color.
+- [ ] VoiceOver: una frase por salida (R50), con «dato sin actualizar» si toca.
 
 ---
 

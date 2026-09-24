@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trajet · B v2 · Live Activity y widgets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="lab2-body">
+<!-- Laboratorio de la Live Activity y los widgets (FASE 2B): tres variantes
+     dentro del lenguaje «Cristal», a tamaño real de iOS en puntos, conectadas
+     a los escenarios de ../shared. Todo lo pinta app.js. -->
+<!-- StandBy de noche: todo en rojo (luminancia → canal rojo) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="standby-rojo" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.35 0.55 0.1 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/></filter></svg>
+<div class="lab2" id="lab2">
+  <main class="stage2">
+    <header class="tool2" id="tool2"></header>
+    <div class="sheet2" id="sheet2"></div>
+  </main>
+  <div class="side2" id="side2"></div>
+</div>
+<script defer src="../shared/data.js"></script>
+<script defer src="../shared/core.js"></script>
+<script defer src="app.js"></script>
+</body>
+</html>

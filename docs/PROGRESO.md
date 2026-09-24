@@ -23,7 +23,7 @@ desde aquí.
   - [x] Seguridad + API v1 · PRIM/cuota/clave cifrada · mapa IDFM (272 tests en verde, 8 reales)
   - [x] Panel · empaquetado (Docker, publish.sh, CI, store 0.4.0) · correcciones del núcleo
   - [x] Verificación independiente (3 + re-verificación) y Parada 2
-- [ ] FASE 2 — Sistema de diseño «Cristal» + Live Activity y widgets
+- [x] FASE 2 — Sistema de diseño «Cristal» + Live Activity y widgets (Parada 3; elegida la variante A «Billete»)
 - [ ] FASE 3 — App iOS
 - [ ] FASE 4 — Pruebas en navegador
 - [ ] FASE 5 — CI, documentación y entrega
@@ -35,3 +35,4 @@ desde aquí.
 - 2026-09-24 01:15 — FASE 0 cerrada. Contrato 0.4.0 congelado. Empieza la FASE 1.
 - 2026-09-24 02:10 — FASE 1 etapa B integrada (commit 95c05d4 en trajet-server). Etapa C en marcha.
 - 2026-09-24 04:30 — FASE 1 cerrada (619 tests, CI verde). Empieza la FASE 2 (diseño).
+- 2026-09-24 — FASE 2 cerrada (corte por límite de uso a mitad, retomada). Empieza la FASE 3 (app iOS).

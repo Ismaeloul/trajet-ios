@@ -31,6 +31,17 @@
   .g-links a { font-size: .78rem; font-weight: 600; padding: 5px 9px; border-radius: 8px; background: #fff; border: 1px solid #d7d7de; }
   .g-links a.primary { background: #1c1c1e; color: #fff; border-color: #1c1c1e; }
   .g-lab .lab-panel { height: 100vh; position: sticky; top: 0; }
+  /* B v2: la Live Activity y los widgets de «Cristal» (FASE 2B), con la variante elegida en grande */
+  .g-v2 { margin-top: 34px; padding-top: 22px; border-top: 1px solid #d7d7de; display: flex; flex-direction: column; gap: 12px; }
+  .g-v2-head { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: flex-start; justify-content: space-between; }
+  .g-v2-head .g-meta { max-width: 640px; }
+  .g-v2-head .g-meta h2 i { width: auto; padding: 0 6px; }
+  .g-v2-vars { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; max-width: 720px; }
+  .g-v2-var { padding: 10px 12px; border-radius: 12px; background: #fff; border: 1px solid #d7d7de; font-size: .8rem; line-height: 1.35; color: #3a3a3c; }
+  .g-v2-var b { display: block; font-size: .88rem; color: #1c1c1e; margin-bottom: 2px; }
+  .g-v2-var.is-chosen { border-color: #1c1c1e; box-shadow: inset 0 0 0 1px #1c1c1e; }
+  .g-v2-frame { width: max-content; max-width: 100%; overflow: auto; border-radius: 18px; background: #17181b; }
+  .g-v2-frame iframe { display: block; width: 1860px; height: 1000px; border: 0; zoom: var(--v2zoom, .5); }
   @media (max-width: 1100px) { .g-lab { grid-template-columns: 1fr; } .g-lab .lab-panel { position: static; height: auto; } }
 </style>
 </head>
@@ -38,7 +49,8 @@
 <div class="g-lab">
   <main class="g-main">
     <header class="g-head">
-      <div><h1>Trajet · laboratorio de diseño</h1><p>Cinco direcciones, el mismo tablero real. Tócalas, cambia los escenarios a la derecha y compara la misma pantalla en las cinco.</p></div>
+      <div><h1>Trajet · laboratorio de diseño</h1><p>Cinco direcciones, el mismo tablero real. Tócalas, cambia los escenarios a la derecha y compara la misma pantalla en las cinco. Elegida: B «Cristal»; su Live Activity y sus widgets, abajo (B v2).</p></div>
+      <a href="#g-v2" style="font-size:.85rem;font-weight:700;padding:8px 12px;border-radius:10px;background:#1c1c1e;color:#fff">B v2 · Live Activity y widgets ↓</a>
     </header>
     <div class="g-tools">
       <label>Comparar la misma pantalla:</label>
@@ -50,6 +62,32 @@
       <button id="g-reload">Recargar las cinco</button>
     </div>
     <div class="g-grid" id="g-grid"></div>
+
+    <!-- B v2 · Live Activity y widgets (FASE 2B). La elegida es la A «Billete»:
+         docs/diseno/decisiones-la-widgets.md y docs/diseno/sistema.md §12.
+         Responde al mismo panel de escenarios (BroadcastChannel). -->
+    <section class="g-v2" id="g-v2">
+      <div class="g-v2-head">
+        <div class="g-meta">
+          <h2><i>B v2</i>Live Activity y widgets</h2>
+          <p>La Live Activity (bloqueo e isla) y los widgets (inicio y bloqueo) rediseñados dentro de «Cristal», a tamaño real de iOS en puntos. Tres variantes; <b>la elegida es la A «Billete»</b> (una anatomía para todo: la cifra en un billete opaco y la vía en su «matriz»). Las otras dos se quedan para comparar. Por qué: <code>docs/diseno/decisiones-la-widgets.md</code>.</p>
+          <div class="g-links">
+            <a class="primary" href="b-cristal-v2/index.html?v=A&amp;view=lamina" target="_blank">A · Billete (elegida)</a>
+            <a href="b-cristal-v2/index.html?v=B&amp;view=lamina" target="_blank">B · Tablero</a>
+            <a href="b-cristal-v2/index.html?v=C&amp;view=lamina" target="_blank">C · Fases</a>
+            <a href="b-cristal-v2/index.html?view=comparar" target="_blank">Las tres</a>
+            <a href="b-cristal-v2/index.html?view=congelada" target="_blank">Viva / congelada</a>
+            <a href="b-cristal-v2/index.html?view=limites" target="_blank">Casos límite de la isla</a>
+          </div>
+        </div>
+        <div class="g-v2-vars">
+          <div class="g-v2-var is-chosen"><b>A · Billete ✓</b>Cifra enorme en un billete opaco; la vía en la matriz; una línea debajo. Congelada no inventa: pasa a horas fijas.</div>
+          <div class="g-v2-var"><b>B · Tablero</b>Un tablero de salidas en miniatura: filas con baldosa, destino y vía. Descartada: cifra pequeña y cabecera ambigua.</div>
+          <div class="g-v2-var"><b>C · Fases</b>Dos baldosas: el tiempo y lo que toca ahora. Descartada: la baldosa derecha cambia de significado.</div>
+        </div>
+      </div>
+      <div class="g-v2-frame"><iframe src="b-cristal-v2/index.html?capture=1&amp;v=A&amp;view=lamina&amp;device=i16&amp;zoom=1" title="B v2 · Live Activity y widgets · variante A" loading="lazy"></iframe></div>
+    </section>
   </main>
   <div id="g-panel"></div>
 </div>

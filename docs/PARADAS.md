@@ -148,3 +148,56 @@ frase de `servidor-v2.md`) y un fallo viejo que encontró de paso (un id mayor
 que 2^63−1 daba 500) quedaron arreglados después. **Sin regresiones.** Suite:
 **619 en verde**; ruff limpio; CI del servidor en verde.
 
+
+---
+
+## Parada 3 — FASE 2: sistema «Cristal» y rediseño de la Live Activity y los widgets (24-09-2026)
+
+### Qué se hizo
+
+- **2A · Sistema de diseño** (`docs/diseno/sistema.md`): tokens en OKLCH y
+  sRGB (claro, oscuro y «Aumentar contraste»), tipografía y escalas, espaciado
+  y radios concéntricos, cristal y materiales (iOS 26 con alternativa y
+  opaco con «Reducir transparencia»), componentes con todos sus estados,
+  catálogo de animaciones traducido a SwiftUI. Fuente única de tokens:
+  `design-lab/tools/tokens.mjs` → `design-lab/tokens.json` y la capa
+  `Trajet/Design/` (Tokens, Typography, Metrics, Motion, Glass, LineColor).
+  Muestrario en `design-lab/sistema/`.
+- **Contraste medido**: 147/147 parejas texto/fondo AA y los 59 colores de
+  línea oficiales de IDFM con el distintivo a ≥ 4,55:1. Consecuencia visible:
+  RER A/B/D, Transilien K/N/V, T6, T9, T14 llevan el código en negro.
+- **Ajustes de B al pasarlo a nativo** (`docs/diseno/ajustes-b.md`, 35): las
+  tarjetas de tramo pasan a opacas (en B los minutos quedaban sobre cristal),
+  colores de texto nuevos para AA, amarillo **solo** para la vía confirmada.
+- **2B · Referencias y límites** (`docs/diseno/referencias-la-widgets.md`):
+  ~30 referencias con enlace y los tamaños reales de iOS (Live Activity,
+  Dynamic Island, widgets de inicio y de bloqueo por dispositivo).
+- **2B · Tres variantes** en `design-lab/b-cristal-v2/` (A «Billete», B
+  «Tablero», C «Fases»), a tamaño real, conectadas a los escenarios. Un
+  **revisor independiente** las puntuó sin piedad: **A 7,6 · B 6,1 · C 5,9**.
+- **Elegida A «Billete»** y corregidos los 23 puntos del revisor (4 graves).
+  Por qué y cómo resuelve uno por uno los problemas del encargo:
+  `docs/diseno/decisiones-la-widgets.md`. Especificación para la FASE 3
+  (tamaños, estados, `ActivityAttributes`, `TimelineProvider`, App Intent de
+  «Parar», deep links): `docs/diseno/sistema.md` §12.
+
+### Capturas y GIF
+
+`design-lab/capturas/la-widgets/`: la elegida en `A/` (≈600), las otras dos
+en `B/` y `C/`, `comparar/` (las tres lado a lado por escenario) y GIF de la
+cuenta atrás, la vía que aparece y el morph de la isla. **Cero errores de
+consola** en todas las pasadas. Muestrario del sistema en
+`design-lab/capturas/sistema/`.
+
+### Problemas y pendientes
+
+- Swift de `Trajet/Design/` escrito sin poder compilar (no hay Mac): se
+  compila en la FASE 3; cinco firmas de iOS 26 marcadas `TODO-COMPILAR` con
+  su alternativa segura.
+- Tamaños de iPhone 16 Pro Max y de la Live Activity del SE: estimados (Apple
+  no los publica); se miden en el simulador en la FASE 3.
+- A comprobar en el simulador: las cadenas exactas de los textos de fecha del
+  sistema en español, si el «calado» se pinta en la extensión y cuántas
+  actualizaciones se pierden con el iPhone bloqueado.
+- La sesión se cortó una vez por el límite de uso a mitad de la FASE 2; se
+  retomó sin perder nada (lo hecho estaba en disco).

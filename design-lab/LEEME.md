@@ -9,6 +9,7 @@ design-lab/
   index.html        la galería: las 5 a la vez, escenarios comunes, «comparar la misma pantalla»
   a-anden/          A · Andén    señalética de estación
   b-cristal/        B · Cristal  Liquid Glass sobre el mapa
+  b-cristal-v2/     B v2: Live Activity y widgets de «Cristal», 3 variantes a tamaño real; elegida la A «Billete» (ver su LEEME)
   c-cifra/          C · Cifra    tipografía gigante, casi monocromo
   d-hilo/           D · Hilo     la línea del trayecto como hilo gráfico
   e-bento/          E · Bento    rejilla densa de celdas
@@ -25,6 +26,9 @@ design-lab/
 
 El sistema de diseño elegido (B «Cristal») está en `docs/diseno/sistema.md`;
 lo que hay que corregir de B al pasarlo a nativo, en `docs/diseno/ajustes-b.md`.
+La Live Activity y los widgets se rediseñaron aparte (B v2): la variante
+elegida es la A «Billete» (`docs/diseno/decisiones-la-widgets.md` y
+`docs/diseno/sistema.md` §12).
 
 ## Verlo en el PC
 
@@ -39,6 +43,29 @@ para una dirección sola con su panel de escenarios al lado. Hace falta
 5.24.0) y las fuentes vienen de CDN, así que con conexión el mapa es de
 verdad (teselas de OpenFreeMap, sin clave) y sin conexión sale el mismo
 trazado en SVG.
+
+## B v2 · Live Activity y widgets
+
+<http://localhost:7797/b-cristal-v2/> (o la sección «B v2» al final de la
+galería, que responde al mismo panel de escenarios). Todo a tamaño real de iOS
+en puntos:
+
+- **A ✓ / B / C**: la lámina de una variante: pantalla de bloqueo (Live
+  Activity y widgets circular, rectangular y en línea), Dynamic Island
+  (compacta, mínima, expandida y la que cambia de forma) e inicio (pequeño,
+  mediano y grande). **A es la elegida**; B y C se quedan como en la 2B.3.
+- **Las tres**: la misma pieza de las tres variantes en cada fila.
+- **Viva / congelada** y **Casos límite**: solo A (la actividad cuando la app
+  deja de escribir; la isla con las cifras que más ocupan).
+- Panel: escenas de un toque (vía real, probable, cambio de vía, cancelado,
+  línea cortada, dato antiguo, sin conexión, sin clave…), la cifra (la escribe
+  la app / sistema / iOS 17) y el aspecto de iOS (tintado, contorno, texto
+  grande, aumentar contraste, siempre activa, StandBy de noche, enlaces y
+  áreas táctiles).
+
+El resto (parámetros de URL, capturas, cómo está hecho) está en
+`b-cristal-v2/LEEME.md`. Si el puerto 7797 está ocupado:
+`$env:PORT=7798; node shared/servidor.js`.
 
 ## Verlo en el iPhone
 

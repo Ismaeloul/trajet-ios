@@ -118,7 +118,15 @@ window.Trajet = (() => {
     speed: 1,              // velocidad del reloj simulado
     trip: false,           // modo trayecto activo
     platformNewAt: null,   // segundos de reloj en que apareció la vía (para el latido)
-    offlineSince: null     // segundos de reloj en que se perdió la conexión
+    offlineSince: null,    // segundos de reloj en que se perdió la conexión
+    // Añadidos para la Live Activity y los widgets (b-cristal-v2). Las demás
+    // direcciones los ignoran; `transfer` les cambia el tablero si se activa.
+    transfer: false,       // ruta encadenada 14 → J (TrajetData.transferBoard)
+    legNow: 0,             // tramo en el que va el trayecto (0 = el primero)
+    tripEnded: false,      // modo trayecto terminado (estado final de la Live Activity)
+    frozen: false,         // la Live Activity dejó de actualizarse (staleDate vencida)
+    widgetTint: 'full',    // full | tinted | clear: aspecto de la pantalla de inicio en iOS 26
+    reduceTransparency: false
   };
   const KEY = 'trajet-lab.scenarios';
   let state = Object.assign({}, DEFAULTS, readJSON(KEY) || {});
@@ -162,6 +170,8 @@ window.Trajet = (() => {
     h.dataset.theme = state.theme;
     h.dataset.reduceMotion = state.reduceMotion ? '1' : '0';
     h.dataset.largeText = state.largeText ? '1' : '0';
+    h.dataset.reduceTransparency = state.reduceTransparency ? '1' : '0';
+    h.dataset.widgetTint = state.widgetTint || 'full';
     h.dataset.mode = MODE;
     h.style.colorScheme = state.theme;
   }
@@ -194,7 +204,8 @@ window.Trajet = (() => {
       Devuelve la forma de la API; los campos derivados van con «_». */
   function buildBoard(s = state) {
     const now = s.offline && s.offlineSince != null ? s.offlineSince : clock.now();
-    const src = JSON.parse(JSON.stringify(D.calmBoard));
+    // Con «transfer», la ruta encadenada 14 → J; si no, el tablero de siempre.
+    const src = JSON.parse(JSON.stringify(s.transfer && D.transferBoard ? D.transferBoard : D.calmBoard));
     if (s.busLong) src.legs.push(JSON.parse(JSON.stringify(D.busLeg)));
 
     src.legs.forEach(leg => {
@@ -259,7 +270,7 @@ window.Trajet = (() => {
     src.last_error = s.offline ? 'sin conexión con el servidor' : null;
     src._now = clock.now();
     src._signature = src.legs.map(l => l.line_code + ':' + l.departures.map(d => d.at).join(',') + ':' + l.status.level + ':' + (l.departures[0] || {}).platform).join('|')
-      + '|' + s.notice + s.emptyLeg + s.busLong + s.atStop + s.platform + s.offline;
+      + '|' + s.notice + s.emptyLeg + s.busLong + s.atStop + s.platform + s.offline + s.transfer;
     return src;
   }
 
@@ -501,21 +512,27 @@ window.Trajet = (() => {
     phone._fit && phone._fit();
   }
 
-  /** El panel de escenarios. Mismo panel en las cinco direcciones y en la galería. */
-  function buildPanel({ size = '390', full = false, gallery = false } = {}) {
+  /** El panel de escenarios. Mismo panel en las cinco direcciones y en la galería.
+      Opciones añadidas para páginas que no son una dirección (b-cristal-v2):
+      `screens: false` quita «Pantalla», `sizes: false` quita «Tamaño»,
+      `links: 'min'` deja solo «Restablecer» y «Galería», y `extra(helpers)`
+      devuelve HTML que va justo debajo de la cabecera (con los mismos
+      botones `data-set`, que el panel sincroniza solo). */
+  function buildPanel({ size = '390', full = false, gallery = false, screens = true, sizes = true, links = 'all', extra = null, title = null } = {}) {
     const p = el('aside', 'lab-panel');
     const s = state;
     const btn = (k, v, label, cur) => `<button class="lp-btn${cur === v ? ' is-on' : ''}" data-set="${k}" data-val="${v}">${label}</button>`;
     const tog = (k, label, cur) => `<button class="lp-tog${cur ? ' is-on' : ''}" data-set="${k}" data-val="${!cur}"><span class="lp-sw"></span>${label}</button>`;
     p.innerHTML = `
       <header class="lp-head">
-        <strong>${gallery ? 'Escenarios (las 5 a la vez)' : 'Escenarios'}</strong>
+        <strong>${title || (gallery ? 'Escenarios (las 5 a la vez)' : 'Escenarios')}</strong>
         ${full ? '<button class="lp-close" data-close>Cerrar</button>' : ''}
       </header>
-      <section class="lp-sec">
+      ${extra ? extra({ btn, tog, s, esc }) : ''}
+      ${screens ? `<section class="lp-sec">
         <h4>Pantalla</h4>
         <div class="lp-grid lp-screens">${SCREENS.map(([id, label]) => `<button class="lp-btn" data-nav="${id}">${label}</button>`).join('')}</div>
-      </section>
+      </section>` : ''}
       <section class="lp-sec">
         <h4>Vía</h4>
         <div class="lp-row">${btn('platform', 'real', 'Real', s.platform)}${btn('platform', 'guess', 'Probable', s.platform)}${btn('platform', 'none', 'Sin vía', s.platform)}</div>
@@ -530,6 +547,7 @@ window.Trajet = (() => {
         ${tog('atStop', 'Tren parado en el andén', s.atStop)}
         ${tog('emptyLeg', 'Tramo vacío (la 14)', s.emptyLeg)}
         ${tog('trip', 'Modo trayecto activo', s.trip)}
+        ${tog('transfer', 'Ruta con transbordo (14 → J)', s.transfer)}
       </section>
       <section class="lp-sec">
         <h4>Sistema</h4>
@@ -541,14 +559,14 @@ window.Trajet = (() => {
         <h4>Reloj <span class="lp-clock" data-clock-panel>12:50:00</span></h4>
         <div class="lp-row">${btn('speed', 1, '×1', s.speed)}${btn('speed', 10, '×10', s.speed)}${btn('speed', 60, '×60', s.speed)}<button class="lp-btn" data-reset-clock>Reiniciar</button></div>
       </section>
-      ${!full && !gallery ? `
+      ${!full && !gallery && sizes ? `
       <section class="lp-sec">
         <h4>Tamaño</h4>
         <div class="lp-row">${['390', '430', '375'].map(k => `<button class="lp-btn${size === k ? ' is-on' : ''}" data-size="${k}">${SIZES[k].join('×')}</button>`).join('')}</div>
       </section>` : ''}
       <section class="lp-sec lp-links">
-        ${!full ? `<a class="lp-btn lp-wide" href="?full=1#${gallery ? 'board' : (app.current || 'board')}" target="_blank" data-full-link>📱 Abrir a pantalla completa (móvil)</a>` : ''}
-        <a class="lp-btn lp-wide" href="?full=1#panel" data-desktop-panel>🖥 Panel del servidor en escritorio (1440×900)</a>
+        ${!full && links === 'all' ? `<a class="lp-btn lp-wide" href="?full=1#${gallery ? 'board' : (app.current || 'board')}" target="_blank" data-full-link>📱 Abrir a pantalla completa (móvil)</a>` : ''}
+        ${links === 'all' ? '<a class="lp-btn lp-wide" href="?full=1#panel" data-desktop-panel>🖥 Panel del servidor en escritorio (1440×900)</a>' : ''}
         <button class="lp-btn lp-wide" data-reset-all>Restablecer escenarios</button>
         ${gallery ? '' : '<a class="lp-btn lp-wide" href="../index.html">← Galería</a>'}
       </section>`;
@@ -644,6 +662,8 @@ window.Trajet = (() => {
   // ------------------------------------------------------------ galería
   const gallery = {
     mountPanel(container) { const p = buildPanel({ gallery: true }); container.appendChild(p); return p; },
+    /** Monta el panel con opciones (páginas que no son una dirección: b-cristal-v2). */
+    mountPanelWith(container, opts) { const p = buildPanel(opts); container.appendChild(p); return p; },
     navigateAll(screen) { channel && channel.postMessage({ type: 'navigate', screen }); },
     channel
   };

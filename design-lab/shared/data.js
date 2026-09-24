@@ -61,6 +61,37 @@ window.TrajetData = (() => {
     ]
   };
 
+  // ---------- Ruta con transbordo de verdad (14 → J) ----------
+  // El tablero de calma (J + 14) no es una cadena: la J llega a Argenteuil y la
+  // 14 sale de Saint-Lazare. Para probar el transbordo en la Live Activity y
+  // los widgets (FASE 2B) hace falta una ruta cuyo tramo 1 acabe donde empieza
+  // el 2: Olympiades → Saint-Lazare en la 14 y Gare Saint-Lazare → Argenteuil
+  // en la J. Misma forma de la API; la J es la del tablero de calma (mismos
+  // jid), así que los escenarios de vía, aviso y andén le siguen valiendo.
+  const transferBoard = (() => {
+    const b = JSON.parse(JSON.stringify(calmBoard));
+    b.route = { id: 6, name: "Trabajo → Casa", origin_name: "Olympiades", dest_name: "Argenteuil" };
+    const j = b.legs[0];
+    const m14 = { seq: 0, line_id: "line:IDFM:C01372", line_code: "14", line_name: "14",
+      line_mode: "Métro", line_color: "640082",
+      from_name: "Olympiades", to_name: "Saint-Lazare", directions: ["Saint-Denis Pleyel"],
+      status: { level: 0, label: "normal", messages: [], messages_es: [], translating: false, planned: 0 },
+      age: 2.4,
+      departures: [
+        { jid: "t1", minutes: 1, at: "12:51", aimed_at: "", destination: "Saint-Denis Pleyel",
+          platform: null, platform_new: false, delay: null, status: "onTime", at_stop: false, train: null, length: null },
+        { jid: "t2", minutes: 4, at: "12:54", aimed_at: "", destination: "Saint-Denis Pleyel",
+          platform: null, platform_new: false, delay: null, status: "onTime", at_stop: false, train: null, length: null },
+        { jid: "t3", minutes: 7, at: "12:57", aimed_at: "", destination: "Saint-Denis Pleyel",
+          platform: null, platform_new: false, delay: null, status: "onTime", at_stop: false, train: null, length: null },
+        { jid: "t4", minutes: 10, at: "13:00", aimed_at: "", destination: "Saint-Denis Pleyel",
+          platform: null, platform_new: false, delay: null, status: "onTime", at_stop: false, train: null, length: null }
+      ] };
+    j.seq = 1;
+    b.legs = [m14, j];
+    return b;
+  })();
+
   // Avisos reales (en francés) que usan los escenarios.
   const notices = {
     slow: { fr: "Trafic ralenti en raison de travaux sur la voirie.", es: "Tráfico lento por obras en la calzada." },
@@ -255,5 +286,5 @@ window.TrajetData = (() => {
     bounds: [[2.232, 48.872], [2.335, 48.951]]
   };
 
-  return { calmBoard, busLeg, notices, routes, stats, platformModel, plan, alternatives, health, admin, lineJ };
+  return { calmBoard, transferBoard, busLeg, notices, routes, stats, platformModel, plan, alternatives, health, admin, lineJ };
 })();
