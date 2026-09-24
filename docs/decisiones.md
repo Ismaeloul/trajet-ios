@@ -180,3 +180,20 @@ al final de cada sección.
   [issue sobre Tailscale y ATS](https://github.com/Untrivial-ai/agent-orchestrator/issues/3852),
   [PR que lo resuelve con CIDR](https://github.com/Untrivial-ai/agent-orchestrator/pull/5488).
   Encaja con el mínimo de iOS 17 del encargo.
+
+---
+
+## FASE 3 — App iOS
+
+### D3.1 · `trajet-ios` pasa a ser público
+- Lo autorizaste el 24-09-2026 («haz público el proyecto»). Antes revisé todo
+  el historial: ni la clave de PRIM, ni `.claude/settings.local.json`, ni
+  `.env`, bases de datos o certificados; solo direcciones privadas de la red de
+  casa y de Tailscale en la documentación (no se alcanzan desde fuera).
+- Por qué ayuda: en un repo público GitHub Actions no descuenta minutos de
+  macOS (en uno privado cuentan ×10), así que se puede compilar y probar sin
+  racionar.
+- `trajet-server` sigue **privado** (el encargo lo pedía así y su CI corre en
+  Linux, que apenas gasta). Si lo quieres público:
+  `gh repo edit Ismaeloul/trajet-server --visibility public --accept-visibility-change-consequences`.
+
