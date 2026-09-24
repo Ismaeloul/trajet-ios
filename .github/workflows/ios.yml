@@ -136,6 +136,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      - name: Subir registros de compilacion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-logs-${{ github.run_number }}
+          path: build/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Release (tags v*)
         if: startsWith(github.ref, 'refs/tags/v')
         env:

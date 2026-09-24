@@ -11,4 +11,5 @@ xcodebuild test-without-building \
   -derivedDataPath build/sim \
   -resultBundlePath build/tests.xcresult \
   > build/tests.log 2>&1 || { grep -E "error:|failed|Failing tests|\*\* TEST" build/tests.log | head -120; exit 1; }
-grep -E "Executed [0-9]+ tests|\*\* TEST" build/tests.log | tail -5
+# Un resumen por paquete (unitarios e interfaz; «1 test» va en singular).
+grep -E "Test Suite '[^']+\.xctest'|Executed [0-9]+ tests?,|\*\* TEST" build/tests.log | tail -12

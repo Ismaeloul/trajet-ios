@@ -826,7 +826,9 @@ enum PreviewData {
         let check: @Sendable (Data) throws -> Void
     }
 
-    static func sample<T: Decodable>(_ name: String, _ json: String, as type: T.Type) -> Sample {
+    // `Sendable`: el cierre es @Sendable y se lleva el tipo (Swift 6.2 avisa
+    // si su metatipo no lo es). Todos los modelos lo son.
+    static func sample<T: Decodable & Sendable>(_ name: String, _ json: String, as type: T.Type) -> Sample {
         Sample(name: name, json: json) { data in
             _ = try JSONDecoder.trajet.decode(T.self, from: data)
         }
