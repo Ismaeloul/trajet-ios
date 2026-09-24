@@ -261,7 +261,7 @@ antigüedad del dato corren solas con `Text(date, style:)`.
 
 ```mermaid
 flowchart LR
-  DEV[PC · trajet-server] -->|scripts/publish.sh| REG[(registro local del Umbrel<br/>localhost:5000)]
+  DEV[trajet-server en el Umbrel<br/>(git pull por SSH)] -->|scripts/publish.sh| REG[(registro local del Umbrel<br/>localhost:5000)]
   STORE[umbrel-app-store<br/>ismaeloul-trajet 0.4.0] --> UMB[umbreld]
   REG --> UMB
   UMB --> WEB[contenedor web · usuario 1000 · healthcheck]
