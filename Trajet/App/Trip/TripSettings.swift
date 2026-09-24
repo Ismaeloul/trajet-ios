@@ -107,10 +107,10 @@ final class TripSettings {
 
     // MARK: - Reglas
 
-    /// La estación de subida del primer tramo de cada ruta.
+    /// La estación de subida del primer tramo de cada ruta (la de origen).
     nonisolated static func defaultStationIDs(for routes: [SavedRoute]) -> Set<String> {
         Set(routes.compactMap { route -> String? in
-            guard let first = route.legs.first, !first.fromId.isEmpty else { return nil }
+            guard let first = route.legs.min(by: { $0.seq < $1.seq }), !first.fromId.isEmpty else { return nil }
             return first.fromId
         })
     }

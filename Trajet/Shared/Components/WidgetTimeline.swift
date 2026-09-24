@@ -173,6 +173,65 @@ struct WidgetSnapshot: Hashable, Sendable {
         return .minutes(m)
     }
 
+    /// Texto secundario del billete (widget grande), con su prioridad:
+    /// «sale 12:56» (si la cifra no es ya la hora), retraso y longitud.
+    func meta(_ dep: WidgetDeparture) -> [GlanceMeta] {
+        var items: [GlanceMeta] = []
+        if !moment(dep).isTime, !dep.atStop { items.append(.time(dep.atText)) }
+        if let delay = dep.delay, delay != 0 { items.append(.delay(delay)) }
+        if let length = dep.length { items.append(.length(length)) }
+        return items
+    }
+
+    /// El intervalo para el texto de fecha del sistema, solo si
+    /// `GlanceCountdown.usesSystemTimer` y esta entrada cuenta hacia atrás.
+    func timerRange(_ dep: WidgetDeparture) -> ClosedRange<Date>? {
+        guard GlanceCountdown.usesSystemTimer, let board, countdownValid, !dep.atStop,
+              minutes(dep) < 60, dep.at > board.receivedAt else { return nil }
+        return board.receivedAt...dep.at
+    }
+
+    /// VoiceOver (R50): una frase por salida, con «dato sin actualizar» si la
+    /// última recarga falló.
+    func spoken(_ dep: WidgetDeparture, in leg: WidgetLeg) -> String {
+        var parts: [String] = []
+        let line = leg.lineCode.isEmpty ? "Salida" : "Línea \(leg.lineCode)"
+        parts.append(dep.destination.isEmpty ? line : "\(line) a \(dep.destination)")
+        let m = moment(dep)
+        if case .long = m {
+            parts.append(GlanceMoment.spokenLong(minutes: minutes(dep)))
+        } else {
+            parts.append(m.spoken)
+        }
+        if let via = dep.via { parts.append(via.spoken) }
+        if let delay = dep.delay, delay != 0 {
+            parts.append(GlanceMoment.spokenDelay(delay))
+        }
+        if dep.cancelled { parts.append("cancelado") }
+        if failure != nil { parts.append("dato sin actualizar") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// Lo que se ve mientras el sistema prepara el widget (va tapado con
+    /// `.redacted(reason: .placeholder)`) y en la galería si aún no hay
+    /// tablero. No es un dato: es la forma del widget.
+    static func sample(now: Date) -> WidgetSnapshot {
+        func dep(_ id: String, _ minutes: Int, via: GlanceVia?) -> WidgetDeparture {
+            let at = now.addingTimeInterval(TimeInterval(minutes) * 60)
+            return WidgetDeparture(id: id, at: at, atText: GlanceClock.hhmm(at), serverMinutes: minutes,
+                                   destination: "Ermont - Eaubonne",
+                                   destinationVariants: DestinationAbbreviator.variants("Ermont - Eaubonne"),
+                                   via: via, delay: nil, atStop: false, length: nil, cancelled: false)
+        }
+        let leg = WidgetLeg(seq: 0, lineCode: "J", lineColor: "CEC73D", fromName: "Gare Saint-Lazare",
+                            toName: "Argenteuil", direction: "Ermont - Eaubonne", statusLevel: 0, mixed: false,
+                            departures: [dep("a", 6, via: .real("21", isNew: false, before: nil)),
+                                         dep("b", 21, via: .probable("21", share: 0.9)),
+                                         dep("c", 36, via: nil)])
+        let board = WidgetBoard(routeID: nil, routeName: "Trajet", receivedAt: now, dataAge: 0, legs: [leg])
+        return WidgetSnapshot(date: now, content: .board(board), failure: nil, countdownValid: true)
+    }
+
     /// A dónde lleva tocar el widget entero (decisiones §6).
     var url: URL {
         guard let board, let routeID = board.routeID else { return AppLink.board.url }
@@ -310,8 +369,8 @@ enum WidgetTimelinePlanner {
     /// el momento en que se va cada salida; cada 5 min después; y la entrada
     /// final cuando se va la última. Ordenadas, sin repetir y con tope.
     static func entryDates(for board: WidgetBoard, now: Date) -> [Date] {
-        guard let final = finalDate(for: board), final > now else { return [now] }
-        let horizon = min(final, now.addingTimeInterval(minuteHorizon))
+        guard let lastGone = finalDate(for: board), lastGone > now else { return [now] }
+        let horizon = min(lastGone, now.addingTimeInterval(minuteHorizon))
         var dates: [Date] = [now]
 
         // Cada minuto, alineado con la llegada del tablero.
@@ -329,11 +388,11 @@ enum WidgetTimelinePlanner {
         }
         // Más allá de la hora, cada 5 min con horas fijas.
         var s = horizon
-        while s < final {
+        while s < lastGone {
             dates.append(s)
             s = s.addingTimeInterval(sparseStep)
         }
-        dates.append(final)
+        dates.append(lastGone)
 
         // Ordenadas, sin fechas a menos de 1 s y con tope (la final, siempre).
         let sorted = dates.sorted()
@@ -343,7 +402,7 @@ enum WidgetTimelinePlanner {
             result.append(d)
         }
         if result.count > maxEntries {
-            result = Array(result.prefix(maxEntries - 1)) + [final]
+            result = Array(result.prefix(maxEntries - 1)) + [lastGone]
         }
         return result
     }
@@ -351,9 +410,9 @@ enum WidgetTimelinePlanner {
     /// La siguiente recarga: a los 15 min como mucho y no después de que se
     /// vaya la última salida; sin salidas, dentro de una hora.
     static func reloadDate(for board: WidgetBoard, now: Date) -> Date {
-        guard let final = finalDate(for: board), final > now else {
+        guard let lastGone = finalDate(for: board), lastGone > now else {
             return now.addingTimeInterval(idleReload)
         }
-        return min(final, now.addingTimeInterval(reloadAfter))
+        return min(lastGone, now.addingTimeInterval(reloadAfter))
     }
 }

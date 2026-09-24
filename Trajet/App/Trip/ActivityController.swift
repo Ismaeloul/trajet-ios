@@ -12,7 +12,7 @@ import ActivityKit
 /// §5.3–5.4). Al tocarla se abre `trajet://ruta/<id>` (lo pone la extensión
 /// con `AppLink.route(id:legSeq:departureJID:)`).
 @MainActor
-protocol TripActivityControlling: AnyObject {
+protocol TripActivityControlling: AnyObject, Sendable {
     /// Hay una Live Activity de este trayecto en pantalla.
     var isRunning: Bool { get }
     /// La empieza (con la app delante). false si no se puede (lite, sin App
@@ -60,7 +60,7 @@ enum TripActivities {
 /// docs/diseno/sistema.md §12.4 y decisiones §5.3): el primero de
 ///  · llegada del tablero + max(90 s, 2 × refresh_hint_s) (el dato es viejo, R19),
 ///  · salida del tren enseñado + 60 s (el tren ya salió),
-///  · siguiente cambio de minuto + 30 s (la cifra la escribe la app).
+///  · siguiente cambio de la cifra + 30 s (la cifra la escribe la app).
 /// Con «sin conexión» o «servidor sin clave» el primero no cuenta: ya se sabe
 /// y ya se dice.
 enum ActivityTiming {
@@ -74,15 +74,16 @@ enum ActivityTiming {
         if let shownDeparture {
             candidates.append(shownDeparture.addingTimeInterval(60))
         }
-        candidates.append(nextMinute(after: now).addingTimeInterval(30))
+        candidates.append(nextChange(receivedAt: receivedAt, now: now).addingTimeInterval(30))
         return candidates.min() ?? now.addingTimeInterval(Board.staleAfter)
     }
 
-    /// El siguiente cambio de minuto del reloj (las salidas son a minuto
-    /// justo: «HH:MM»).
-    static func nextMinute(after date: Date) -> Date {
-        let seconds = date.timeIntervalSinceReferenceDate
-        return Date(timeIntervalSinceReferenceDate: (seconds / 60).rounded(.down) * 60 + 60)
+    /// Cuándo baja la cifra que se escribe: los minutos del servidor menos
+    /// los minutos enteros que han pasado desde que llegó el tablero, así que
+    /// cambia a llegada + 60 s, + 120 s… (no con el reloj de la pared).
+    static func nextChange(receivedAt: Date, now: Date) -> Date {
+        let elapsed = max(0, now.timeIntervalSince(receivedAt))
+        return receivedAt.addingTimeInterval(((elapsed / 60).rounded(.down) + 1) * 60)
     }
 }
 
@@ -122,7 +123,7 @@ final class ActivityController: TripActivityControlling {
             await update(snapshot, alert: nil)
             return true
         }
-        let state = Self.state(for: snapshot)
+        let state = Self.state(for: snapshot, previous: nil)
         let attributes = TrajetActivityAttributes(routeID: snapshot.routeID, routeName: snapshot.routeName)
         let content = ActivityContent(state: state, staleDate: Self.staleDate(state, now: snapshot.now))
         do {
@@ -142,7 +143,7 @@ final class ActivityController: TripActivityControlling {
 
     func update(_ snapshot: TripActivitySnapshot, alert: TripAlert?) async {
         guard let id = activityID else { return }
-        let state = Self.state(for: snapshot)
+        let state = Self.state(for: snapshot, previous: lastState)
         if alert == nil, state == lastState, let lastPushAt,
            snapshot.now.timeIntervalSince(lastPushAt) < Self.sameStateInterval {
             return
@@ -161,16 +162,18 @@ final class ActivityController: TripActivityControlling {
 
     func end(_ snapshot: TripActivitySnapshot?, reason: TripEndReason) async {
         let ids = activityID.map { [$0] }
+        let previous = lastState
         activityID = nil
         lastState = nil
         lastPushAt = nil
-        let finalReason: TrajetActivityAttributes.EndReason? = switch reason {
-        case .arrived: .arrived
-        case .timeLimit: .maxDuration
-        case .manual, .permissionDenied, .failed: nil
+        let finalReason: TrajetActivityAttributes.EndReason?
+        switch reason {
+        case .arrived: finalReason = .arrived
+        case .timeLimit: finalReason = .maxDuration
+        case .manual, .permissionDenied, .failed: finalReason = nil
         }
         if let finalReason, let snapshot {
-            var state = Self.state(for: snapshot)
+            var state = Self.state(for: snapshot, previous: previous)
             state.ended = finalReason
             await Self.finish(ids: ids, state: state,
                               dismissAt: snapshot.now.addingTimeInterval(Self.endedLinger))
@@ -195,28 +198,61 @@ final class ActivityController: TripActivityControlling {
 
     // MARK: - La foto
 
-    /// El `ContentState` de B4 (`ActivityContentBuilder`) sobre el tablero
-    /// recortado, con la posición del tramo en la ruta entera y el estado de
-    /// la conexión, que el constructor no conoce.
-    static func state(for snapshot: TripActivitySnapshot) -> State {
+    /// El `ContentState` de B4 (`ActivityContentBuilder.make`) sobre el
+    /// tablero recortado, con lo que el constructor no sabe: la posición del
+    /// tramo en la ruta entera, el fallo de conexión que ha visto el tablero y
+    /// el cambio de vía respecto a lo último escrito (`platformBefore`).
+    static func state(for snapshot: TripActivitySnapshot, previous: State?) -> State {
         var state = ActivityContentBuilder.make(board: snapshot.board, receivedAt: snapshot.receivedAt,
                                                 routeID: snapshot.routeID, now: snapshot.now)
         state.legIndex += snapshot.legOffset
         state.legCount = max(snapshot.legCount, state.legCount)
-        state.connection = switch snapshot.connection {
-        case .ok: .ok
-        case .offline: .offline
-        case .noKey: .noKey
+        // Si el tablero no ha visto fallo, manda lo que deduzca el constructor
+        // (clave que falta, tablero de hace más de 90 s).
+        switch snapshot.connection {
+        case .ok: break
+        case .offline: state.connection = .offline
+        case .noKey: state.connection = .noKey
         }
+        carryPlatformChanges(&state, previous: previous)
         return state
     }
 
+    /// «Cambio de vía · antes 19»: la misma salida (`jid`) tenía otra vía en
+    /// lo último escrito. Se conserva mientras la vía no vuelva a cambiar.
+    static func carryPlatformChanges(_ state: inout State, previous: State?) {
+        guard let previous else { return }
+        var before: [String: TrajetActivityAttributes.Dep] = [:]
+        for dep in previous.leg.departures where before[dep.jid] == nil {
+            before[dep.jid] = dep
+        }
+        if let first = previous.next?.first, before[first.jid] == nil {
+            before[first.jid] = first
+        }
+        func carried(_ dep: TrajetActivityAttributes.Dep) -> TrajetActivityAttributes.Dep {
+            guard dep.platformBefore == nil, let platform = dep.platform, let old = before[dep.jid] else { return dep }
+            var result = dep
+            if let oldPlatform = old.platform, !oldPlatform.isEmpty, oldPlatform != platform {
+                result.platformBefore = oldPlatform
+            } else if old.platform == platform {
+                result.platformBefore = old.platformBefore
+            }
+            return result
+        }
+        state.leg.departures = state.leg.departures.map(carried)
+        if let first = state.next?.first {
+            state.next?.first = carried(first)
+        }
+    }
+
     static func staleDate(_ state: State, now: Date) -> Date {
-        ActivityTiming.staleDate(receivedAt: state.receivedAt,
-                                 refreshHint: state.refreshHint,
-                                 connectionOK: state.connection == .ok,
-                                 shownDeparture: state.leg.departures.first(where: { !$0.cancelled })?.at,
-                                 now: now)
+        let hero = state.leg.departures.first(where: { !$0.cancelled })
+        return ActivityTiming.staleDate(receivedAt: state.receivedAt,
+                                        refreshHint: state.refreshHint,
+                                        connectionOK: state.connection == .ok,
+                                        // Parado en el andén no «sale» a su hora: no caduca por eso.
+                                        shownDeparture: hero?.atStop == true ? nil : hero?.at,
+                                        now: now)
     }
 
     // MARK: - ActivityKit, fuera del MainActor

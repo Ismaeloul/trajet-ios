@@ -35,12 +35,21 @@ enum WidgetRefresher {
 
     /// Lo llama `BoardStore` justo después de guardar el tablero en
     /// `BoardCache`. Un tablero bueno borra el fallo apuntado.
+    ///
+    /// Si lo que se ve ha cambiado pero la última recarga fue hace menos de
+    /// `minimumGap`, la recarga se deja pendiente y sale en cuanto se cumple
+    /// (mientras la app siga viva; si no, la hace el propio timeline).
     static func boardDidChange() {
         guard isEnabled else { return }
         clearFailure()
-        let signature = signature(of: BoardCache.load())
-        if throttle.shouldReload(signature: signature, now: Date()) {
+        let seen = signature(of: BoardCache.load())
+        switch throttle.decide(signature: seen, now: Date()) {
+        case .reload:
             reloadAll()
+        case .later(let date):
+            schedulePending(at: date)
+        case .skip:
+            break
         }
     }
 
@@ -52,8 +61,14 @@ enum WidgetRefresher {
         let changed = defaults.string(forKey: Keys.failure) != failure.rawValue
         defaults.set(failure.rawValue, forKey: Keys.failure)
         defaults.set(Date().timeIntervalSince1970, forKey: Keys.failureAt)
-        if changed, throttle.shouldReload(signature: "fallo|\(failure.rawValue)", now: Date()) {
+        guard changed else { return }
+        switch throttle.decide(signature: "fallo|\(failure.rawValue)", now: Date()) {
+        case .reload:
             reloadAll()
+        case .later(let date):
+            schedulePending(at: date)
+        case .skip:
+            break
         }
     }
 
@@ -87,11 +102,18 @@ enum WidgetRefresher {
     /// ¿Toca recargar? Con cambios, si hace `minimumGap` de la última; sin
     /// cambios, si hace `idleGap`. La primera vez, siempre.
     static func shouldReload(now: Date, lastReload: Date?, lastSignature: String?, signature: String) -> Bool {
-        guard let lastReload else { return true }
+        decision(now: now, lastReload: lastReload, lastSignature: lastSignature, signature: signature) == .reload
+    }
+
+    /// Lo mismo, diciendo cuándo si ha cambiado algo y aún es pronto.
+    static func decision(now: Date, lastReload: Date?, lastSignature: String?, signature: String) -> WidgetReloadDecision {
+        guard let lastReload else { return .reload }
         let elapsed = now.timeIntervalSince(lastReload)
-        if elapsed < 0 { return true }          // el reloj ha ido hacia atrás
-        if signature != lastSignature { return elapsed >= minimumGap }
-        return elapsed >= idleGap
+        if elapsed < 0 { return .reload }          // el reloj ha ido hacia atrás
+        if signature != lastSignature {
+            return elapsed >= minimumGap ? .reload : .later(lastReload.addingTimeInterval(minimumGap))
+        }
+        return elapsed >= idleGap ? .reload : .skip
     }
 
     // MARK: - Fontanería
@@ -123,7 +145,29 @@ enum WidgetRefresher {
         }
     }
 
+    /// Una sola recarga pendiente a la vez: la hace quien llegue a `date`.
+    private static func schedulePending(at date: Date) {
+        guard throttle.markPending() else { return }
+        let wait = max(1, date.timeIntervalSinceNow)
+        Task {
+            try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+            if WidgetRefresher.throttle.firePending(now: Date()) {
+                WidgetRefresher.reloadAll()
+            }
+        }
+    }
+
     private static let throttle = RefreshThrottle()
+}
+
+/// Qué hacer con un aviso de tablero nuevo.
+enum WidgetReloadDecision: Equatable, Sendable {
+    /// Recargar ya.
+    case reload
+    /// Ha cambiado lo que se ve, pero hace poco de la última: a esta hora.
+    case later(Date)
+    /// No ha cambiado nada que se vea.
+    case skip
 }
 
 /// Cuándo fue la última recarga y qué se veía. Con cerrojo: se puede llamar
@@ -132,15 +176,45 @@ private final class RefreshThrottle: @unchecked Sendable {
     private let lock = NSLock()
     private var lastReload: Date?
     private var lastSignature: String?
+    private var pendingSignature: String?
+    private var hasPendingTask = false
 
-    func shouldReload(signature: String, now: Date) -> Bool {
+    func decide(signature: String, now: Date) -> WidgetReloadDecision {
         lock.lock()
         defer { lock.unlock() }
-        guard WidgetRefresher.shouldReload(now: now, lastReload: lastReload,
-                                           lastSignature: lastSignature, signature: signature)
-        else { return false }
+        let decision = WidgetRefresher.decision(now: now, lastReload: lastReload,
+                                                lastSignature: lastSignature, signature: signature)
+        switch decision {
+        case .reload:
+            lastReload = now
+            lastSignature = signature
+            pendingSignature = nil
+        case .later:
+            pendingSignature = signature
+        case .skip:
+            break
+        }
+        return decision
+    }
+
+    /// true si no había ya una tarea esperando.
+    func markPending() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if hasPendingTask { return false }
+        hasPendingTask = true
+        return true
+    }
+
+    /// La tarea pendiente ha despertado: true si aún hay algo que recargar.
+    func firePending(now: Date) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        hasPendingTask = false
+        guard let pendingSignature else { return false }
         lastReload = now
-        lastSignature = signature
+        lastSignature = pendingSignature
+        self.pendingSignature = nil
         return true
     }
 }

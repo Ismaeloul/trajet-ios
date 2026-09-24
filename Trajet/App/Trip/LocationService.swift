@@ -12,7 +12,7 @@ import UIKit
 /// - Ubicación en segundo plano SOLO mientras dura un trayecto, con precisión
 ///   de ~100 m.
 @MainActor
-protocol LocationService: AnyObject {
+protocol LocationService: AnyObject, Sendable {
     var authorization: LocationAuthorization { get }
     /// La última posición que se conoce (para el camino a pie del mapa).
     var lastLocation: TripLocation? { get }
@@ -68,7 +68,11 @@ final class SystemLocationService: LocationService {
     @ObservationIgnored private var backgroundSession: CLBackgroundActivitySession? = nil
     @ObservationIgnored private var waiters: [AuthorizationWaiter] = []
     @ObservationIgnored private var activeObserver: (any NSObjectProtocol)? = nil
+    @ObservationIgnored private var resignObserver: (any NSObjectProtocol)? = nil
     @ObservationIgnored private var waitTimeout: Task<Void, Never>? = nil
+    @ObservationIgnored private var promptCheck: Task<Void, Never>? = nil
+    /// El aviso del sistema ha salido (la app ha dejado de estar activa).
+    @ObservationIgnored private var promptShown = false
 
     /// Alguien espera la respuesta al aviso de permiso.
     private struct AuthorizationWaiter {
@@ -108,7 +112,9 @@ final class SystemLocationService: LocationService {
 
     /// Pregunta y espera: a que cambie el permiso, a que la app vuelva a
     /// estar activa (el aviso se ha cerrado; al pasar de «Al usar» a
-    /// «Siempre» iOS no avisa si se queda igual) o, como mucho, 90 s.
+    /// «Siempre» iOS no avisa si se queda igual) o, como mucho, 90 s. Si el
+    /// aviso ni siquiera sale (iOS pregunta «Siempre» una sola vez en la vida
+    /// de la app), se contesta enseguida con lo que hay.
     private func waitForAnswer(_ ask: Ask) async -> LocationAuthorization {
         let from = authorization
         return await withCheckedContinuation { continuation in
@@ -122,6 +128,17 @@ final class SystemLocationService: LocationService {
     }
 
     private func watchForAnswer() {
+        promptShown = false
+        if resignObserver == nil {
+            resignObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                // Cola principal: ya se está en el MainActor.
+                MainActor.assumeIsolated {
+                    self?.promptShown = true
+                }
+            }
+        }
         if activeObserver == nil {
             activeObserver = NotificationCenter.default.addObserver(
                 forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
@@ -132,6 +149,12 @@ final class SystemLocationService: LocationService {
                     self?.resumeAllWaiters()
                 }
             }
+        }
+        promptCheck?.cancel()
+        promptCheck = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard !Task.isCancelled, let self, !self.promptShown else { return }
+            self.resumeAllWaiters()
         }
         waitTimeout?.cancel()
         waitTimeout = Task { [weak self] in
@@ -165,9 +188,15 @@ final class SystemLocationService: LocationService {
         if let activeObserver {
             NotificationCenter.default.removeObserver(activeObserver)
         }
+        if let resignObserver {
+            NotificationCenter.default.removeObserver(resignObserver)
+        }
         activeObserver = nil
+        resignObserver = nil
         waitTimeout?.cancel()
         waitTimeout = nil
+        promptCheck?.cancel()
+        promptCheck = nil
     }
 
     // MARK: - Trayecto

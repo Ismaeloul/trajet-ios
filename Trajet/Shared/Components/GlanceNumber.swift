@@ -55,6 +55,21 @@ struct GlanceNumberStyle: Hashable, Sendable {
     }
 }
 
+/// Quién mueve la cifra (decisiones-la-widgets.md §5.2, P0-2).
+///
+/// - `false` (lo decidido): la cifra la escribe la app en la Live Activity
+///   viva (dos tallas, «ya», «1h46»; `staleDate` la protege) y la pone cada
+///   entrada del timeline en los widgets (una por minuto). Caducada, hora fija.
+/// - `true` (la alternativa que corre sola, también en iOS 17):
+///   `Text(timerInterval:countsDown:)`, «5:59», de una talla, con un marco
+///   fijo y `minimumScaleFactor`.
+///
+/// TODO-PROBAR (decisiones §10.1): comparar en el simulador las cadenas
+/// exactas en español antes de cambiarlo.
+enum GlanceCountdown {
+    static let usesSystemTimer = false
+}
+
 /// La cifra: lo primero que se lee (R48). SF Pro Rounded heavy con dígitos
 /// tabulares, «min» más pequeño al lado (dos tallas), «ya», «1h46» (R6),
 /// «En andén» (R15) o la hora fija con «sale a las».
@@ -74,11 +89,37 @@ struct GlanceNumber: View {
     var showsTimeLabel: Bool = true
     /// Encoger hasta este factor antes que desbordar (1 = nunca).
     var minimumScale: CGFloat = 1
+    /// Con `GlanceCountdown.usesSystemTimer`: la cuenta atrás del sistema,
+    /// que corre sola (desde la llegada del tablero hasta la salida).
+    var timer: ClosedRange<Date>? = nil
 
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     @Environment(\.isLuminanceReduced) var luminanceReduced
 
     var body: some View {
+        if let timer, usesTimer {
+            // Una sola talla (el sistema pone el formato): «5:59».
+            Text(timerInterval: timer, countsDown: true)
+                .font(GlanceFont.number(style.time))
+                .foregroundStyle(ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.leading)
+        } else {
+            staticNumber
+        }
+    }
+
+    /// Solo minutos y «ya»: «En andén», «1h46» y la hora fija no se mueven.
+    private var usesTimer: Bool {
+        switch moment {
+        case .minutes, .now: true
+        case .long, .atStop, .time: false
+        }
+    }
+
+    @ViewBuilder
+    private var staticNumber: some View {
         switch moment {
         case .minutes(let m):
             HStack(alignment: .firstTextBaseline, spacing: style.unit * 0.2) {
@@ -116,10 +157,10 @@ struct GlanceNumber: View {
             .foregroundStyle(ink)
             .lineLimit(1)
             .minimumScaleFactor(minimumScale)
-            .contentTransition(transition)
+            .contentTransition(numberTransition)
     }
 
-    private var transition: ContentTransition {
+    private var numberTransition: ContentTransition {
         if luminanceReduced { return .identity }
         return reduceMotion ? .opacity : .numericText(countsDown: true)
     }

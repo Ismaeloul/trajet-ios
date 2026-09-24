@@ -3,7 +3,7 @@ import Foundation
 /// El mapa de una ruta, visto desde el modo trayecto (en los tests, uno
 /// falso). `MapStore` ya lo cumple.
 @MainActor
-protocol RouteMapProviding: AnyObject {
+protocol RouteMapProviding: AnyObject, Sendable {
     func map(for routeID: Int) -> RouteMap?
     func load(routeID: Int, force: Bool) async
 }

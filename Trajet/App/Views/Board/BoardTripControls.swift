@@ -99,9 +99,11 @@ struct BoardTripControls: View {
 
 #if DEBUG
 #Preview("Empezar y parar trayecto") {
-    BoardTripControls(routeID: 3)
-        .padding(Metrics.Space.gutter)
-        .background(Palette.bg)
-        .environment(AppServices.demo(escenario: "cincoTramos"))
+    DemoServicesPreview("cincoTramos", loadsBoard: false) {
+        BoardTripControls(routeID: 3)
+            .padding(Metrics.Space.gutter)
+            .frame(maxHeight: .infinity)
+            .background(Palette.bg)
+    }
 }
 #endif

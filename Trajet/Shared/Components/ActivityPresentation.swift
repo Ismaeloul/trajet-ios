@@ -52,10 +52,14 @@ struct ActivityPresentation: Hashable, Sendable {
     /// «el tren enseñado ya salió» (el tercer término de `staleDate`, el
     /// cambio de minuto, depende de cuándo se escribió y la foto no lo sabe;
     /// sin él la hora que se enseña es la misma o una más prudente).
+    /// Sin conexión o sin clave, el primer término no cuenta (igual que en
+    /// `staleDate`): el dato ya se sabía viejo y la app seguía escribiendo.
     static func staleReference(for state: State) -> Date {
-        var candidates: [Date] = [
-            state.receivedAt.addingTimeInterval(max(Board.staleAfter, 2 * TimeInterval(state.refreshHint))),
-        ]
+        var candidates: [Date] = []
+        if state.connection == .ok {
+            candidates.append(state.receivedAt.addingTimeInterval(
+                max(Board.staleAfter, 2 * TimeInterval(state.refreshHint))))
+        }
         if let first = state.leg.departures.first(where: { !$0.cancelled }), !first.atStop {
             candidates.append(first.at.addingTimeInterval(60))
         }
@@ -105,6 +109,20 @@ struct ActivityPresentation: Hashable, Sendable {
     func moment(_ dep: Dep) -> GlanceMoment {
         if isStale { return .time(GlanceClock.hhmm(dep.at)) }
         return GlanceMoment.from(minutes: dep.minutes, atStop: dep.atStop)
+    }
+
+    /// El intervalo para el texto de fecha del sistema (`Text(timerInterval:)`),
+    /// solo si `GlanceCountdown.usesSystemTimer` y la salida tiene cuenta
+    /// atrás (ni caducada, ni en el andén, ni con una hora o más).
+    func timerRange(_ dep: Dep) -> ClosedRange<Date>? {
+        guard GlanceCountdown.usesSystemTimer, !isStale, !dep.atStop, dep.minutes < 60,
+              dep.at > state.receivedAt else { return nil }
+        return state.receivedAt...dep.at
+    }
+
+    /// Las variantes de la parada de transbordo («en St-Lazare»).
+    var transferNames: [String] {
+        DestinationAbbreviator.variants(state.leg.toName)
     }
 
     /// La vía de una salida, con su forma (R10). Caducada, tal como llegó y
@@ -163,7 +181,7 @@ struct ActivityPresentation: Hashable, Sendable {
         if case .long = m { parts.append(GlanceMoment.spokenLong(minutes: dep.minutes)) } else { parts.append(m.spoken) }
         if let v = via(dep) { parts.append(v.spoken) }
         if let delay = dep.delay, delay != 0 {
-            parts.append(delay > 0 ? "\(delay) minutos de retraso" : "\(-delay) minutos de adelanto")
+            parts.append(GlanceMoment.spokenDelay(delay))
         }
         if isOff { parts.append("dato sin actualizar") }
         return parts.joined(separator: ", ")

@@ -91,6 +91,8 @@ struct GlanceTicket: View {
     var tone: GlanceTone = .live
     /// «90 %» en la matriz (widget grande, vía probable).
     var showsShare: Bool = false
+    /// Cuenta atrás del sistema (solo con `GlanceCountdown.usesSystemTimer`).
+    var timer: ClosedRange<Date>? = nil
 
     @Environment(\.widgetRenderingMode) var renderingMode
 
@@ -100,7 +102,7 @@ struct GlanceTicket: View {
         let shape = RoundedRectangle(cornerRadius: size.radius, style: .continuous)
         HStack(spacing: 0) {
             GlanceNumber(moment: moment, style: size.numberStyle, ink: colors.ink, ink2: colors.ink2,
-                         showsTimeLabel: size != .small)
+                         showsTimeLabel: size != .small, timer: timer)
                 .padding(.leading, size == .small ? 11 : 14)
                 .padding(.trailing, 4)
                 .frame(minWidth: size.numberMinWidth, alignment: .leading)
@@ -109,8 +111,12 @@ struct GlanceTicket: View {
                 .padding(.horizontal, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let via {
+                // La vía que aparece o cambia entra con escala 0,3 → 1 (la
+                // animación la pone quien la usa; sistema.md §12.10).
                 GlancePlatformMark(via: via, size: size.stub, word: size == .small ? .short : .full,
                                    showsShare: showsShare, tone: tone, probableInk: colors.ink)
+                    .id(via.isReal ? "vía \(via.number)" : "prob. \(via.number)")
+                    .transition(.scale(scale: 0.3).combined(with: .opacity))
                     .layoutPriority(1)
             }
         }
@@ -185,6 +191,8 @@ struct GlanceHeroTicket: View {
     var delay: Int?
     var style: GlanceNumberStyle = .widgetSmall
     var tone: GlanceTone = .live
+    /// Cuenta atrás del sistema (solo con `GlanceCountdown.usesSystemTimer`).
+    var timer: ClosedRange<Date>? = nil
 
     @Environment(\.widgetRenderingMode) var renderingMode
 
@@ -192,7 +200,8 @@ struct GlanceHeroTicket: View {
         let colors = GlanceTicketColors.make(tone: tone, atStop: moment == .atStop, ink: GlanceInk(renderingMode))
         let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            GlanceNumber(moment: moment, style: style, ink: colors.ink, ink2: colors.ink2, minimumScale: 0.7)
+            GlanceNumber(moment: moment, style: style, ink: colors.ink, ink2: colors.ink2, minimumScale: 0.7,
+                         timer: timer)
             if let delay, delay != 0, moment != .atStop {
                 Text(verbatim: Fmt.delay(delay))
                     .glanceText(12, .heavy, relativeTo: .caption)

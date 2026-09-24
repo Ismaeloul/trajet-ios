@@ -100,9 +100,10 @@ struct RouteMapView: View {
                 UserAnnotation()
             }
         }
+        // Sin rotar ni inclinar (`interactionModes`), así que no sale la
+        // brújula; los controles que se ven los pone MapScreen fuera del mapa
+        // (`MapUserLocationButton(scope:)`).
         .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
-        .mapControls {}
-        .annotationTitles(style == .header ? .hidden : .automatic)
         .onMapCameraChange(frequency: .onEnd) { context in
             let fine = RouteMapDetail.useFine(cameraDistance: context.camera.distance, current: useFine)
             if fine != useFine { useFine = fine }
@@ -149,15 +150,17 @@ struct RouteMapView: View {
         }
         ForEach(style == .full ? g.transfers : []) { transfer in
             Annotation("", coordinate: transfer.coordinate, anchor: .top) {
-                TransferTag(text: transfer.label)
+                RouteMapTransferTag(text: transfer.label)
                     .padding(.top, 12)
             }
         }
         ForEach(style == .full ? g.stops : g.stops.filter { $0.role == .origin || $0.role == .destination }) { stop in
             Annotation(stop.name, coordinate: stop.coordinate, anchor: .center) {
-                StationDot(role: stop.role, color: LineColor.parse(stop.colorHex))
+                RouteMapStationDot(role: stop.role, color: LineColor.parse(stop.colorHex))
                     .accessibilityLabel(stop.spoken)
             }
+            // La cabecera del tablero va sin etiquetas (sistema.md §7.1).
+            .annotationTitles(style == .header ? .hidden : .automatic)
         }
     }
 
@@ -176,7 +179,7 @@ struct RouteMapView: View {
     private var platformContent: some MapContent {
         if let platform {
             Annotation("", coordinate: platform.point.coordinate, anchor: .bottom) {
-                PlatformPin(platform: platform.platform, isReal: platform.isReal)
+                RouteMapPlatformPin(platform: platform.platform, isReal: platform.isReal)
             }
         }
     }
@@ -211,7 +214,7 @@ struct RouteMapView: View {
 
 /// Parada servida: círculo con relleno claro y el color de la línea (más
 /// grande en la subida y la bajada).
-private struct StationDot: View {
+private struct RouteMapStationDot: View {
     let role: MapStation.Role
     let color: Color
 
@@ -225,7 +228,7 @@ private struct StationDot: View {
 }
 
 /// «Transbordo · mín. 4 min» (de `min_transfer_s`).
-private struct TransferTag: View {
+private struct RouteMapTransferTag: View {
     let text: String
 
     var body: some View {
@@ -242,7 +245,7 @@ private struct TransferTag: View {
 
 /// La vía en el mapa: caja sólida «Vía 21» si es real, recuadro punteado
 /// «probable 21» si no (R10).
-private struct PlatformPin: View {
+private struct RouteMapPlatformPin: View {
     let platform: String
     let isReal: Bool
 

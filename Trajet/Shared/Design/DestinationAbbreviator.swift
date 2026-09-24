@@ -76,6 +76,50 @@ enum DestinationAbbreviator {
         return variants[min(max(0, level), variants.count - 1)]
     }
 
+    /// Las variantes a partir del nivel `level` (la vista sigue cayendo desde
+    /// ahí si ni así cabe).
+    static func variants(_ variants: [String], from level: Int) -> [String] {
+        guard !variants.isEmpty else { return [] }
+        return Array(variants.dropFirst(min(max(0, level), variants.count - 1)))
+    }
+
+    /// Un hueco donde va un destino: sus variantes, el ancho que tiene y la
+    /// talla del texto (pt con Dynamic Type «Grande»).
+    struct Slot: Sendable {
+        let variants: [String]
+        let room: Double
+        let size: Double
+
+        init(variants: [String], room: Double, size: Double) {
+            self.variants = variants
+            self.room = room
+            self.size = size
+        }
+    }
+
+    /// Ancho aproximado de un texto en SF Pro bold/semibold: 0,58 × cuerpo
+    /// por carácter (por lo alto: mejor abreviar de más que cortar).
+    static func estimatedWidth(_ text: String, size: Double) -> Double {
+        Double(text.count) * size * 0.58
+    }
+
+    /// Un solo nivel de abreviatura por widget (decisiones §7, `fitGroups`):
+    /// el primero en el que caben TODOS los huecos. Si la cabecera necesita
+    /// «Ermont», las filas dicen «Ermont» aunque cupiera más. Es una
+    /// estimación: cada texto sigue con su `ViewThatFits` por si no cabe.
+    static func sharedLevel(_ slots: [Slot]) -> Int {
+        let deepest = slots.map { max(0, $0.variants.count - 1) }.max() ?? 0
+        guard deepest > 0 else { return 0 }
+        for level in 0...deepest {
+            let fits = slots.allSatisfy { slot in
+                guard let text = variant(slot.variants, level: level) else { return true }
+                return estimatedWidth(text, size: slot.size) <= slot.room
+            }
+            if fits { return level }
+        }
+        return deepest
+    }
+
     // MARK: - Reglas
 
     /// Diccionario de la señalética RATP/SNCF. Se aplica en orden y solo a

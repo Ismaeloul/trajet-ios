@@ -111,6 +111,10 @@ final class WalkingGuide {
 
     /// MKDirections fuera del MainActor: entra y sale solo con valores
     /// `Sendable` (los objetos de MapKit no cruzan de actor).
+    ///
+    /// TODO-COMPILAR: si en el SDK de iOS 26 `MKDirections` o `MKMapItem`
+    /// resultan `@MainActor`, marcar esta función `@MainActor` (el cálculo
+    /// ya es asíncrono: no bloquea el hilo principal).
     nonisolated static func calculate(from origin: GeoPoint, to destination: GeoPoint) async -> Route? {
         let request = MKDirections.Request()
         // TODO-COMPILAR: `MKPlacemark` y `MKMapItem(placemark:)` están

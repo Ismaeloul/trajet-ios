@@ -108,6 +108,13 @@ final class TripController {
     /// El tramo por el que se va (nil sin trayecto).
     var currentLegSeq: Int? { session?.currentLegSeq }
 
+    /// Cuándo se apaga solo (nil sin trayecto).
+    var deadline: Date? { session?.deadline }
+
+    /// El trayecto sigue el GPS (hay llegada automática). false sin trayecto
+    /// o sin permiso de ubicación.
+    var usesLocation: Bool { session?.usesLocation ?? false }
+
     var isAskingPermission: Bool { state == .askingPermission }
 
     var endReason: TripEndReason? {
@@ -254,10 +261,12 @@ final class TripController {
         activate(session, restoring: true)
     }
 
-    /// El tablero tiene que ser el de la ruta del trayecto: el bucle refresca
-    /// la ruta fijada (o la automática).
+    /// El tablero tiene que ser el de la ruta del trayecto durante todo el
+    /// trayecto: se FIJA aunque ahora sea la automática (si no, al cambiar la
+    /// franja horaria el servidor elegiría otra en mitad del viaje). Fijarla
+    /// refresca ya (R39): el trayecto empieza con el dato de ahora.
     private func prepareBoard(for routeID: Int) {
-        guard board.currentRouteID != routeID else {
+        guard board.pinnedRouteID != routeID else {
             pinnedByTrip = false
             return
         }
@@ -299,13 +308,15 @@ final class TripController {
         }
     }
 
-    /// Hasta el siguiente cambio de minuto (la cifra de la Live Activity la
-    /// escribe la app) o hasta el tiempo máximo, lo que llegue antes.
+    /// Hasta el siguiente cambio de la cifra de la Live Activity (la escribe
+    /// la app: baja un minuto cada 60 s contados desde la llegada del
+    /// tablero) o hasta el tiempo máximo, lo que llegue antes.
     private func secondsUntilNextTick() -> Double? {
         guard let session else { return nil }
         let now = clock()
-        let minute = ActivityTiming.nextMinute(after: now).addingTimeInterval(1)
-        let next = min(minute, session.deadline)
+        let receivedAt = board.receivedAt ?? now
+        let change = ActivityTiming.nextChange(receivedAt: receivedAt, now: now).addingTimeInterval(1)
+        let next = min(change, session.deadline)
         return max(1, next.timeIntervalSince(now))
     }
 

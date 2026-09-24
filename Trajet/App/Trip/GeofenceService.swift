@@ -9,7 +9,7 @@ import Foundation
 /// Activity si hay una. Lo vigila el sistema con wifi y antenas, sin GPS:
 /// casi no gasta. Solo con el permiso «Siempre».
 @MainActor
-protocol GeofenceMonitoring: AnyObject {
+protocol GeofenceMonitoring: AnyObject, Sendable {
     /// Se ha entrado en la geocerca de una estación (su id).
     var onEnter: (@MainActor (String) -> Void)? { get set }
     /// Las que se vigilan ahora.
@@ -68,6 +68,15 @@ final class SystemGeofenceService: GeofenceMonitoring {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // Si iOS ha despertado a la app por una geocerca, el evento espera a
+        // que se vuelva a abrir el monitor: se abre ya, sin esperar a las
+        // rutas ni a los mapas (quien escucha, `onEnter`, se pone justo
+        // después de crear esto, antes de que corra la tarea).
+        if defaults.bool(forKey: Self.registeredKey) {
+            Task { [weak self] in
+                _ = await self?.openMonitor()
+            }
+        }
     }
 
     func monitor(_ stations: [WatchedStation], keeping: Set<String>) async {
@@ -117,17 +126,30 @@ final class SystemGeofenceService: GeofenceMonitoring {
         opening = nil
         if let clMonitor { return clMonitor }
         clMonitor = opened
-        eventsTask = Task { [weak self] in
-            do {
-                for try await event in await opened.events {
-                    guard event.state == .satisfied else { continue }
-                    self?.onEnter?(event.identifier)
-                }
-            } catch {
-                // El flujo de eventos se ha cortado: se vuelve a abrir en el
-                // próximo arranque.
-            }
+        let handler: @Sendable (String) async -> Void = { [weak self] identifier in
+            await self?.entered(identifier)
+        }
+        eventsTask = Task {
+            await SystemGeofenceService.listen(to: opened, onEnter: handler)
         }
         return opened
+    }
+
+    private func entered(_ identifier: String) {
+        onEnter?(identifier)
+    }
+
+    /// Los eventos se leen fuera del MainActor (el iterador del monitor no
+    /// cruza de actor); solo el identificador (un String) vuelve a él.
+    nonisolated private static func listen(to monitor: CLMonitor,
+                                           onEnter: @escaping @Sendable (String) async -> Void) async {
+        do {
+            for try await event in await monitor.events where event.state == .satisfied {
+                await onEnter(event.identifier)
+            }
+        } catch {
+            // El flujo de eventos se ha cortado: se vuelve a abrir en el
+            // próximo arranque.
+        }
     }
 }

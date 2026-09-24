@@ -47,6 +47,7 @@ struct BoardIssueView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .cristalButton()
+                .controlSize(.large)
                 .disabled(isRetrying)
             }
         }

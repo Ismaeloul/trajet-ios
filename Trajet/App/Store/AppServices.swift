@@ -19,6 +19,11 @@ final class AppServices {
     let health: HealthStore
     let maps: MapStore
     let pairing: PairingStore
+    /// Ajustes del modo trayecto y de las geocercas (UserDefaults).
+    let tripSettings: TripSettings
+    /// El modo trayecto (Trajet/App/Trip): empezar, parar, Live Activity y
+    /// geocercas. Registra ya el «Parar» de la Live Activity.
+    let trip: TripController
     /// Arrancada con `-demo` (servidor falso en proceso).
     let isDemo: Bool
 
@@ -37,6 +42,10 @@ final class AppServices {
         self.maps = MapStore(api: api, directory: mapDirectory)
         self.pairing = PairingStore(api: api, config: config, tokens: tokens)
         self.isDemo = isDemo
+        let tripSettings = TripSettings(defaults: isDemo ? TripSettings.demoDefaults() : .standard)
+        self.tripSettings = tripSettings
+        self.trip = TripController.make(board: self.board, maps: self.maps, routes: self.routes,
+                                        settings: tripSettings, isDemo: isDemo)
         wire()
     }
 

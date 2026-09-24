@@ -356,16 +356,24 @@ struct BoardTagFlow: Layout {
 }
 
 #if DEBUG
-#Preview("Detalle del tramo") {
-    Color.clear
-        .sheet(isPresented: .constant(true)) {
-            LegDetailSheet(legSeq: 3)
-        }
-        .environment(AppServices.demo(escenario: "cincoTramos"))
+#Preview("Detalle: metro cortado, aviso sin traducir") {
+    DemoServicesPreview("cincoTramos") {
+        Color.clear
+            .sheet(isPresented: .constant(true)) {
+                LegDetailSheet(legSeq: 3)
+            }
+    }
 }
 
 #Preview("Detalle: vía probable explicada") {
-    LegDetailSheet(legSeq: 0)
-        .environment(AppServices.demo(escenario: "viaProbable"))
+    DemoServicesPreview("viaProbable") {
+        LegDetailSheet(legSeq: 0)
+    }
+}
+
+#Preview("Detalle: obras futuras y avisos sin leer") {
+    DemoServicesPreview("casosLimite") {
+        LegDetailSheet(legSeq: 2)
+    }
 }
 #endif

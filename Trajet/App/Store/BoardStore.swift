@@ -100,7 +100,7 @@ struct BoardPersistence: Sendable {
     }
 
     static let disk = BoardPersistence(load: { BoardCache.load() },
-                                       save: { BoardCache.save($0) },
+                                       save: { BoardCache.save($0); WidgetRefresher.boardDidChange() },
                                        clear: { BoardCache.clear() })
 
     static let none = BoardPersistence(load: { nil }, save: { _ in }, clear: {})

@@ -75,6 +75,7 @@ struct AlternativesSheet: View {
                         .frame(maxWidth: .infinity)
                 }
                 .cristalButton()
+                .controlSize(.large)
             }
         case .loaded(let reply):
             loaded(reply)
@@ -283,11 +284,12 @@ private struct AlternativeLegRow: View {
 
 #if DEBUG
 #Preview("Alternativas (demo)") {
-    Color.clear
-        .sheet(isPresented: .constant(true)) {
-            AlternativesSheet(routeID: 3)
-        }
-        .environment(AppServices.demo(escenario: "cincoTramos"))
+    DemoServicesPreview("cincoTramos", loadsBoard: false) {
+        Color.clear
+            .sheet(isPresented: .constant(true)) {
+                AlternativesSheet(routeID: 3)
+            }
+    }
 }
 
 #Preview("Opciones") {

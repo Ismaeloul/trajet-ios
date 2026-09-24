@@ -336,6 +336,26 @@ enum BoardText {
         return (shown, clean.count - shown.count)
     }
 
+    /// «y 1 error más», «y 2 errores más» (debajo de los 3 del pie, R26).
+    static func moreErrors(_ hidden: Int) -> String? {
+        guard hidden > 0 else { return nil }
+        return hidden == 1 ? "y 1 error más" : "y \(hidden) errores más"
+    }
+
+    /// El botón de alternativas: «Buscar alternativa» o, con una línea de la
+    /// ruta interrumpida, «Buscar alternativa · línea 14 cortada» (sistema.md
+    /// §7.1). Pedirlas es cosa de la persona (R29): el botón no llama a nada.
+    static func alternativesTitle(_ board: Board) -> String {
+        guard alternativesIsUrgent(board) else { return "Buscar alternativa" }
+        let line = board.worstLine.trimmingCharacters(in: .whitespacesAndNewlines)
+        return line.isEmpty ? "Buscar alternativa · línea cortada" : "Buscar alternativa · línea \(line) cortada"
+    }
+
+    /// Con una línea interrumpida el botón pasa a ser el rojo de peligro.
+    static func alternativesIsUrgent(_ board: Board) -> Bool {
+        board.worstLevel >= 2
+    }
+
     /// El error de la estación de un tramo caído, si el servidor lo dice
     /// (`errors` va como «Parada: motivo»).
     static func stationError(for leg: Leg, in board: Board) -> String? {
@@ -642,6 +662,27 @@ struct BoardPill: Equatable, Sendable {
         return BoardPill(kind: .serverError, text: "sin cuota hasta las \(back) · \(age)",
                          symbol: "gauge.with.dots.needle.100percent",
                          spoken: "Se acabó la cuota de hoy; vuelve a las \(back). Tablero de hace \(spokenAge).")
+    }
+}
+
+// MARK: - Tablero apagado (R19)
+
+/// Con el dato viejo se apaga TODO el contenido de debajo de la cabecera
+/// (tarjetas y pie), no solo una etiqueta; la píldora de estado no se apaga:
+/// lo explica. Viejo = `stale` del servidor o más de 90 s sin recibir un
+/// tablero; nunca por `data_age` (R19). Con el tablero apagado no hay
+/// latidos ni hápticas (ajustes-b.md A3).
+enum BoardDimming {
+    static func isDimmed(board: Board?, now: Date) -> Bool {
+        board?.isStale(now: now) ?? false
+    }
+
+    static func opacity(dimmed: Bool) -> Double {
+        dimmed ? Metrics.Opacity.stale : 1
+    }
+
+    static func saturation(dimmed: Bool) -> Double {
+        dimmed ? Metrics.Opacity.staleSaturation : 1
     }
 }
 

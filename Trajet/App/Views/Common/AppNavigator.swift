@@ -27,6 +27,16 @@ enum AppTab: Hashable, Sendable, CaseIterable {
         case .history: "chart.bar"
         }
     }
+
+    /// El bucle de 30 s del tablero solo corre con Tablero o Trayecto
+    /// delante (R7, sistema.md §7.11); en Rutas e Historial se para (salvo
+    /// en modo trayecto, que lo mantiene vivo por su cuenta).
+    var refreshesBoard: Bool {
+        switch self {
+        case .board, .trip: true
+        case .routes, .history: false
+        }
+    }
 }
 
 /// La navegación de la app: qué pestaña se ve, qué hoja está abierta y los

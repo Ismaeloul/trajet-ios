@@ -41,13 +41,15 @@ struct GlanceSurface: Sendable {
 /// entera; si no cabe ninguna, nada (nunca «Ermont - Eaub…»).
 struct GlanceDestination: View {
     let variants: [String]
+    /// Empieza en este nivel de abreviatura (el común del widget).
+    var fromLevel: Int = 0
     var size: CGFloat = 14
     var weight: Font.Weight = .bold
     var color: Color = Palette.ink
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            ForEach(variants, id: \.self) { name in
+            ForEach(DestinationAbbreviator.variants(variants, from: fromLevel), id: \.self) { name in
                 Text(verbatim: name)
                     .glanceText(size, weight, relativeTo: .subheadline)
                     .foregroundStyle(color)
@@ -152,7 +154,7 @@ struct ActivityAgeLabel: View {
             HStack(spacing: 4) {
                 Image(systemName: symbol)
                     .font(.system(size: size + 1, weight: .bold))
-                Text("\(prefix)hace \(reference, style: .relative)")
+                (Text(verbatim: "\(prefix)hace ") + Text(reference, style: .relative))
                     .glanceText(size, .bold, relativeTo: .caption, tabular: true)
                     .lineLimit(1)
                     .fixedSize()
@@ -164,7 +166,7 @@ struct ActivityAgeLabel: View {
             .background(Capsule().fill(kind.isBad ? surface.noticeBad : surface.noticeWarn))
             .fixedSize()
         } else {
-            Text("hace \(reference, style: .relative)")
+            (Text(verbatim: "hace ") + Text(reference, style: .relative))
                 .glanceText(size, .semibold, relativeTo: .caption, tabular: true)
                 .foregroundStyle(surface.ink2)
                 .lineLimit(1)

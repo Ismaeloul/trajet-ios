@@ -78,6 +78,13 @@ enum GlanceMoment: Hashable, Sendable {
         }
     }
 
+    /// VoiceOver del retraso («2 minutos de retraso», «1 minuto de adelanto»).
+    static func spokenDelay(_ delay: Int) -> String {
+        let n = abs(delay)
+        let unit = n == 1 ? "minuto" : "minutos"
+        return delay > 0 ? "\(n) \(unit) de retraso" : "\(n) \(unit) de adelanto"
+    }
+
     /// VoiceOver con los minutos exactos cuando se saben (1 h 46 min).
     static func spokenLong(minutes: Int) -> String {
         let h = minutes / 60
