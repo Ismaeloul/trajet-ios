@@ -75,8 +75,8 @@ struct GlanceNumber: View {
     /// Encoger hasta este factor antes que desbordar (1 = nunca).
     var minimumScale: CGFloat = 1
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.isLuminanceReduced) private var luminanceReduced
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.isLuminanceReduced) var luminanceReduced
 
     var body: some View {
         switch moment {

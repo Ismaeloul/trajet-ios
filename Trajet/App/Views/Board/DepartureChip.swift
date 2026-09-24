@@ -23,7 +23,7 @@ struct DepartureChip: View {
         VStack(alignment: .leading, spacing: Metrics.Space.xs) {
             number
             if let destination = content.destination {
-                DestinationText(destination: destination)
+                ChipDestinationText(destination: destination)
             } else if let time = content.time {
                 Text(time)
                     .textLevel(.chipCaption)
@@ -91,7 +91,7 @@ struct DepartureChip: View {
 /// El destino de una ficha cuando el tramo mezcla destinos (R24): la
 /// variante más larga que quepa, sin cortar nunca a mitad de palabra
 /// (`DestinationAbbreviator`). Si no cabe ni la más corta, dos líneas.
-struct DestinationText: View {
+struct ChipDestinationText: View {
     let destination: String
 
     var body: some View {
@@ -113,7 +113,7 @@ struct DestinationText: View {
     }
 
     private func line(_ text: String) -> some View {
-        Text(text).lineLimit(1).fixedSize(horizontal: true, vertical: false)
+        Text(text).lineLimit(1)
     }
 }
 
