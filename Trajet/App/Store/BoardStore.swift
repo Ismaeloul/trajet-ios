@@ -90,18 +90,24 @@ struct BoardPersistence: Sendable {
     var load: @Sendable () -> CachedBoard?
     var save: @Sendable (CachedBoard) -> Void
     var clear: @Sendable () -> Void
+    /// Un refresco no ha traído tablero por falta de red o de clave: en el
+    /// disco se apunta para los widgets (`WidgetRefresher.refreshFailed`).
+    var failed: @Sendable (WidgetFailure) -> Void
 
     init(load: @escaping @Sendable () -> CachedBoard?,
          save: @escaping @Sendable (CachedBoard) -> Void,
-         clear: @escaping @Sendable () -> Void) {
+         clear: @escaping @Sendable () -> Void,
+         failed: @escaping @Sendable (WidgetFailure) -> Void = { _ in }) {
         self.load = load
         self.save = save
         self.clear = clear
+        self.failed = failed
     }
 
     static let disk = BoardPersistence(load: { BoardCache.load() },
                                        save: { BoardCache.save($0); WidgetRefresher.boardDidChange() },
-                                       clear: { BoardCache.clear() })
+                                       clear: { BoardCache.clear() },
+                                       failed: { WidgetRefresher.refreshFailed($0) })
 
     static let none = BoardPersistence(load: { nil }, save: { _ in }, clear: {})
 
@@ -361,7 +367,15 @@ final class BoardStore {
                 await load(logHistory: logHistory)
                 return
             }
-            issue = Self.designedIssue(for: error)
+            let designed = Self.designedIssue(for: error)
+            issue = designed
+            // Los widgets lo dicen con su símbolo: «sin conexión», «servidor
+            // sin clave» (el resto, con la antigüedad basta).
+            switch designed {
+            case .offline: persistence.failed(.offline)
+            case .noKey: persistence.failed(.noKey)
+            case .keyRejected, .quotaExhausted, .upstream, .notPaired, .other: break
+            }
             finishAttempt()
         } catch {
             guard myEpoch == epoch else { return }

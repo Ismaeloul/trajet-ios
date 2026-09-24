@@ -102,6 +102,6 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Trajet usa tu ubicación para enseñarte en el mapa el camino a pie hasta la estación y para saber cuándo has llegado en el modo trayecto.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Durante un trayecto que tú empiezas, Trajet sigue tu ubicación con poca precisión en segundo plano para actualizar la Live Activity y apagarse sola al llegar. Fuera de un trayecto no la usa.</string>
+    <string>Durante un trayecto que tú empiezas, Trajet sigue tu ubicación con poca precisión en segundo plano para actualizar la Live Activity y apagarse sola al llegar. Si activas en Ajustes las estaciones habituales, iOS avisa a Trajet al llegar a una de ellas para poner al día el tablero, sin GPS. Fuera de eso no la usa.</string>
 </dict>
 </plist>

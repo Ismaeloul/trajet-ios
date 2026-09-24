@@ -122,3 +122,42 @@ algo falta, se añade aquí y en el código a la vez.
   atenúa con `isRetained(seq:)` / `legAge(seq:now:)`.
 - `Board` ya no tiene `empty`/`message`: `BoardPayload` o
   `BoardStore.emptyMessage`.
+
+## Etapa B (FASE 3): trayecto, widgets y navegación
+
+Lo que añadieron los agentes de la etapa B (informes en
+`docs/encargos-fase3/informes-etapaB.md`), integrado y compilado en CI.
+
+- `AppServices` además: `tripSettings: TripSettings` y `trip: TripController`.
+  Desemparejar para el trayecto (y su Live Activity).
+- `TripController` (`@MainActor @Observable`, Trajet/App/Trip): `state`
+  (`TripState { off, askingPermission, active(TripSession), ended(TripEndReason) }`),
+  `isActive`, `activeRouteID`, `session`, `currentLegSeq`, `deadline`,
+  `usesLocation`, `isAskingPermission`, `endReason`, `endedAt`,
+  `monitoredStationIDs`, `canUseGeofences`, `location`; `start(routeID:)`,
+  `start(routeID:askLocation:)`, `stop(reason:)`, `acknowledgeEnd()`,
+  `requestAlwaysForGeofences()`, `watchableStations() -> [StationOption]`,
+  `static link(routeID:) -> URL`. `TripEndReason { arrived, timeLimit, manual, permissionDenied, failed(String) }` con `summary`.
+- `TripSettings`: `maxMinutes` (15…240, 90 por defecto), `geofencesEnabled`,
+  `watchedStationIDs`, `usesDefaultStations`, `resetWatchedStations()`,
+  `static geofenceExplanation`, `static maxMinutesRange`.
+- Vistas: `MainTabView`, `BoardScreen`, `MapScreen`,
+  `RouteMapView(routeID:style:)` (`RouteMapStyle { header, full }`),
+  `TripCard(routeID:walking:hasLicense:onShowLicense:)`.
+- Navegación (Views/Common): `AppTab { board, trip, routes, history }`,
+  `AppNavigator` (`tab`, `showingSettings`, `alternativesRouteID`,
+  `focusLegSeq`, `toasts`, `show(_:)`, `open(_:)`), `ToastCenter`
+  (`show(_:symbol:)`, `View.toastHost(_:)`), `HapticTrigger` +
+  `.haptic(_:trigger:)`, `MessageStateView`, `DemoServicesPreview` (DEBUG).
+  Se leen con `@Environment(AppNavigator.self) private var navigator: AppNavigator?`.
+  `BoardPreferences.platformHapticKey` = «Vibrar cuando aparece la vía».
+  `SettingsScreen` se presenta como hoja: trae su `NavigationStack` y su «Cerrar».
+- Widgets y Live Activity (Trajet/Shared): `ActivityContentBuilder.make(board:receivedAt:routeID:now:)`
+  (y con `options:`), `staleDate(for:writtenAt:)`, `alert(previous:current:)`;
+  `WidgetRefresher.boardDidChange()` (lo llama `BoardPersistence.disk` al
+  guardar) y `refreshFailed(_: WidgetFailure)` (lo llama `BoardStore` con
+  «sin conexión» y «servidor sin clave», vía `BoardPersistence.failed`);
+  `TrajetWidgetKind.home/.lock`; `DestinationAbbreviator.variants(_:)`,
+  `shortest(_:)`, `sharedLevel(_:)`; piezas `GlanceTicket`,
+  `GlancePlatformMark`, `ActivityPresentation`,
+  `WidgetTimelinePlanner.plan(cached:hasAppGroup:failure:now:)`.

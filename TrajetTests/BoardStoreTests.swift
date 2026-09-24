@@ -38,6 +38,29 @@ final class BoardStoreTests: XCTestCase {
         XCTAssertTrue(store.hasLoadedOnce)
     }
 
+    /// Sin red o sin clave se apunta para los widgets (con su símbolo); el
+    /// resto de fallos no, y un tablero bueno no apunta nada.
+    @MainActor
+    func testFalloApuntadoParaLosWidgets() async {
+        let fake = FakeBoardSource()
+        await fake.enqueue(.success(PreviewData.payload(.tranquilo)))
+        await fake.enqueue(.failure(.network("sin red")))
+        await fake.enqueue(.failure(.server(code: "prim_key_missing", message: "", status: 503, retryAfter: nil)))
+        await fake.enqueue(.failure(.server(code: "upstream", message: "", status: 502, retryAfter: nil)))
+        let failures = LockedBox<[WidgetFailure]>([])
+        let memory = BoardPersistence.memory()
+        let persistence = BoardPersistence(load: memory.load, save: memory.save, clear: memory.clear,
+                                           failed: { failure in failures.withValue { $0.append(failure) } })
+        let store = makeStore(fake, persistence: persistence)
+
+        await store.refresh()
+        XCTAssertEqual(failures.value, [])
+        await store.refresh()
+        await store.refresh()
+        await store.refresh()
+        XCTAssertEqual(failures.value, [.offline, .noKey])
+    }
+
     /// Al arrancar se pinta la caché con su hora real (R9, R20).
     @MainActor
     func testPrimeraAperturaEnsenaCache() {

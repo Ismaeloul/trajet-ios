@@ -78,6 +78,10 @@ final class AppServices {
         }
         pairing.onUnpaired = { [weak self] in
             guard let self else { return }
+            // Sin servidor no hay trayecto que seguir: se para (y se quita
+            // su Live Activity) antes de vaciar el tablero.
+            let trip = self.trip
+            Task { await trip.stop(reason: .manual) }
             self.board.reset()
             self.routes.reset()
             self.health.reset()

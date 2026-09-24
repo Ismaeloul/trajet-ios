@@ -72,10 +72,14 @@ jobs:
           tail -3 build/compilar.log build/compilar-lite.log
           exit $fallo
 
-      - name: Errores de compilacion (si los hay)
-        if: failure()
+      # Siempre: los avisos (concurrencia de Swift 6 sobre todo) tambien
+      # cuando compila.
+      - name: Errores y avisos de compilacion
+        if: always()
         run: |
-          grep -h -E "error:|warning: .*(Sendable|actor|concurrency)" build/*.log | sort -u | head -200 || true
+          grep -h -E "error:" build/*.log | sort -u | head -200 || true
+          echo "--- avisos ---"
+          grep -h -E "warning:" build/*.log | sort -u | head -300 || true
 
       - name: IPA full y lite (Release, sin firmar)
         if: env.MODO != 'compilar'
