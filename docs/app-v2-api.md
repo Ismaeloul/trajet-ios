@@ -161,3 +161,7 @@ Lo que añadieron los agentes de la etapa B (informes en
   `shortest(_:)`, `sharedLevel(_:)`; piezas `GlanceTicket`,
   `GlancePlatformMark`, `ActivityPresentation`,
   `WidgetTimelinePlanner.plan(cached:hasAppGroup:failure:now:)`.
+- `TrajetActivityAttributes.ContentState.endedAt: Date?` (solo en el estado
+  final): `ActivityContentBuilder.ended(_:reason:at:)`, `endedLinger` (15 min),
+  `ActivityPresentation.dismissesAt` y `endedDetail` («se quita sola a las HH:MM»).
+- `RootView`: al emparejarse deja ver el «Listo» 1,2 s y funde a las pestañas.
