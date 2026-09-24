@@ -1,77 +1,144 @@
-# Compila la app en un runner macOS y deja el .ipa SIN FIRMAR como artifact.
-# La firma la pone IPA Station en el Umbrel con el Apple ID gratuito, que es
-# lo unico que se puede hacer sin cuenta de desarrollador de pago.
-name: IPA
+# App iOS: XcodeGen, tests, capturas y las DOS IPA sin firmar como artefactos.
+#   Trajet-full.ipa  con widgets, Live Activity y App Group (certificado tipo Signulous)
+#   Trajet-lite.ipa  sin extensiones ni App Group (Apple ID gratuito)
+# En los tags v* se adjuntan a una Release.
+#
+# Modos (para no gastar minutos de macOS, que en un repo privado cuentan x10):
+#   compilar  solo comprueba que TODO compila (app, lite, extension y tests)
+#   completo  compilar + IPA full y lite + tests unitarios y de interfaz
+#   capturas  completo + capturas en iPhone SE, 16 y 16 Pro Max, claro y
+#             oscuro y letra grande
+# Un push hace «completo»; a mano (Run workflow) se elige.
+name: iOS
 
 on:
   push:
     branches: [main, rewrite-v2]
+    tags: ["v*"]
     paths-ignore: ["README.md", "docs/**", "design-lab/**"]
   workflow_dispatch:
+    inputs:
+      modo:
+        description: "compilar | completo | capturas"
+        required: true
+        default: completo
 
 permissions:
-  contents: read
+  contents: write     # solo para adjuntar las IPA a la Release de un tag
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MODO: ${{ github.event.inputs.modo || (startsWith(github.ref, 'refs/tags/v') && 'capturas') || 'completo' }}
 
 jobs:
-  ipa:
-    # iOS 26 necesita el SDK de Xcode 26, que solo trae la imagen de Tahoe.
+  ios:
     runs-on: macos-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
-      - name: Elegir el Xcode mas nuevo de la imagen
+      - name: Xcode mas nuevo de la imagen
         run: |
           set -euo pipefail
-          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          echo "Usando $latest"
+          latest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
           sudo xcode-select -s "$latest"
           xcodebuild -version
-          xcodebuild -showsdks
-          ls -d /Applications/Xcode*.app
-          sw_vers
-          xcrun simctl list runtimes
-          xcrun simctl list devicetypes | grep -i -E "iphone (se|16|17)" || true
+          echo "Modo: $MODO"
 
-      - name: Generar el proyecto Xcode
+      - name: Generar el proyecto
         run: |
           set -euo pipefail
-          brew install xcodegen
+          brew install xcodegen >/dev/null
           xcodegen generate --spec project.yml
 
-      - name: Compilar (Release, sin firmar)
+      - name: Compilar todo (simulador, Debug, con los tests)
+        run: |
+          set -uo pipefail
+          mkdir -p build
+          fallo=0
+          xcodebuild build-for-testing \
+            -project Trajet.xcodeproj -scheme Trajet \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO > build/compilar.log 2>&1 || fallo=1
+          xcodebuild build \
+            -project Trajet.xcodeproj -scheme TrajetLite \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim-lite \
+            CODE_SIGNING_ALLOWED=NO > build/compilar-lite.log 2>&1 || fallo=1
+          tail -3 build/compilar.log build/compilar-lite.log
+          exit $fallo
+
+      - name: Errores de compilacion (si los hay)
+        if: failure()
+        run: |
+          grep -h -E "error:|warning: .*(Sendable|actor|concurrency)" build/*.log | sort -u | head -200 || true
+
+      - name: IPA full y lite (Release, sin firmar)
+        if: env.MODO != 'compilar'
         run: |
           set -euo pipefail
-          xcodebuild \
-            -project Trajet.xcodeproj \
-            -scheme Trajet \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=NO \
-            build
+          bash scripts/ci-ipa.sh
 
-      - name: Empaquetar el .ipa
+      - name: Tests unitarios y de interfaz
+        if: env.MODO != 'compilar'
         run: |
           set -euo pipefail
-          app="build/Build/Products/Release-iphoneos/Trajet.app"
-          test -d "$app" || { echo "no se ha generado $app"; exit 1; }
-          rm -rf Payload && mkdir Payload
-          cp -R "$app" Payload/
-          # Un .ipa es un zip con la app dentro de Payload/, nada mas.
-          zip -qry "Trajet.ipa" Payload
-          unzip -l Trajet.ipa | tail -3
-          ls -lh Trajet.ipa
+          bash scripts/ci-tests.sh
 
-      - name: Subir el artifact
+      - name: Capturas
+        if: env.MODO == 'capturas'
+        run: |
+          set -euo pipefail
+          bash scripts/ci-capturas.sh
+
+      - name: Resumen de tests (si fallan)
+        if: failure() && env.MODO != 'compilar'
+        run: |
+          ls build/*.xcresult 2>/dev/null || true
+          for r in build/*.xcresult; do
+            xcrun xcresulttool get test-results summary --path "$r" --compact 2>/dev/null | head -c 20000 || true
+          done
+
+      - name: Subir las IPA
+        if: env.MODO != 'compilar'
         uses: actions/upload-artifact@v4
         with:
           name: Trajet-ipa-${{ github.run_number }}
-          path: Trajet.ipa
+          path: |
+            build/ipa/Trajet-full.ipa
+            build/ipa/Trajet-lite.ipa
           if-no-files-found: error
           retention-days: 30
+
+      - name: Subir capturas
+        if: env.MODO == 'capturas' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-capturas-${{ github.run_number }}
+          path: build/capturas
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Subir resultados de tests
+        if: env.MODO != 'compilar' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trajet-xcresult-${{ github.run_number }}
+          path: build/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Release (tags v*)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" build/ipa/Trajet-full.ipa build/ipa/Trajet-lite.ipa \
+            --title "Trajet ${GITHUB_REF_NAME}" \
+            --notes "IPA sin firmar. full: con widgets y Live Activity (necesita App Group: certificado tipo Signulous). lite: sin extensiones, para firmar con un Apple ID gratuito." \
+            || gh release upload "${GITHUB_REF_NAME}" build/ipa/Trajet-full.ipa build/ipa/Trajet-lite.ipa --clobber

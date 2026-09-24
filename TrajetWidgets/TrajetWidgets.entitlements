@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Solo la IPA full. El App Group comparte el ultimo tablero con los
+     widgets y la Live Activity. Con un Apple ID gratuito no existe: la app lo
+     detecta en tiempo de ejecucion y no ofrece esas funciones. -->
+<plist version="1.0">
+<dict>
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.ismaeloul.trajet</string>
+    </array>
+</dict>
+</plist>

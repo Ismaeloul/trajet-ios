@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- IPA «full». Info-Lite.plist es igual salvo NSSupportsLiveActivities:
+     si cambias algo aqui, cambialo alli (hay un test que lo compara). -->
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>es</string>
+    <key>CFBundleDisplayName</key>
+    <string>Trajet</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>LaunchBackground</string>
+    </dict>
+
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- El QR del panel es un enlace trajet://pair?...: la camara del
+         sistema tambien abre la app. Y trajet://route/<id> para los widgets
+         y la Live Activity. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.ismaeloul.trajet</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>trajet</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Live Activity del modo trayecto (solo en la IPA full). -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- Ubicacion en segundo plano SOLO mientras dura un trayecto (la app
+         enciende allowsBackgroundLocationUpdates al empezar y la apaga al
+         terminar). -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+    </array>
+
+    <!-- ATS sin NSAllowsArbitraryLoads. El servidor sirve HTTP plano en la
+         red de casa y en el tailnet:
+         - NSAllowsLocalNetworking: redes locales (RFC 1918, link-local,
+           .local y nombres sin dominio).
+         - 100.64.0.0/10: el rango de Tailscale (CGNAT, que iOS no considera
+           local). Las claves CIDR valen desde iOS 17.
+         - ts.net: los nombres MagicDNS de Tailscale. -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>100.64.0.0/10</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+            <key>ts.net</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Trajet habla con el servidor de tu casa para enseñarte los próximos trenes de tus trayectos.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Trajet usa la cámara solo para escanear el código QR del panel y emparejarse con tu servidor.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Trajet usa tu ubicación para enseñarte en el mapa el camino a pie hasta la estación y para saber cuándo has llegado en el modo trayecto.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Durante un trayecto que tú empiezas, Trajet sigue tu ubicación con poca precisión en segundo plano para actualizar la Live Activity y apagarse sola al llegar. Fuera de un trayecto no la usa.</string>
+</dict>
+</plist>

@@ -1,40 +1,142 @@
 # El .xcodeproj no se versiona: lo genera XcodeGen desde este fichero, tanto
 # en CI como en un Mac. Asi no hay pbxproj escrito a mano que se pudra.
+#
+# Dos apps con el MISMO bundle id (reinstalar encima conserva los datos):
+#   Trajet      IPA «full»: con la extension de widgets y Live Activity y el
+#               App Group. Para firmar con un certificado tipo Signulous.
+#   TrajetLite  IPA «lite»: sin extensiones ni App Group, para firmar con un
+#               Apple ID gratuito (que no da App Groups).
+# El codigo compartido (Trajet/Shared) se compila en la app y en la extension:
+# sin framework intermedio, menos piezas que firmar.
 name: Trajet
 options:
   bundleIdPrefix: com.ismaeloul
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "17.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  generateEmptyDirectories: true
 
 settings:
   base:
-    SWIFT_VERSION: "5.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     TARGETED_DEVICE_FAMILY: "1"          # solo iPhone
     ENABLE_USER_SCRIPT_SANDBOXING: YES
-    SWIFT_STRICT_CONCURRENCY: minimal
+    MARKETING_VERSION: "2.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Se firma FUERA (IPA Station, Signulous...). El CI compila sin firmar.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: ""
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGNING_ALLOWED: NO
 
 targets:
   Trajet:
     type: application
     platform: iOS
     sources:
-      - path: Trajet
-        excludes:
-          - "Info.plist"
+      - path: Trajet/Shared
+      - path: Trajet/App
+        excludes: ["Info.plist", "Info-Lite.plist", "*.entitlements"]
+      - path: Trajet/Resources
+    dependencies:
+      - target: TrajetWidgets
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet
         PRODUCT_NAME: Trajet
-        MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
-        INFOPLIST_FILE: Trajet/Info.plist
+        INFOPLIST_FILE: Trajet/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Trajet/App/Trajet.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        # Se firma FUERA, con IPA Station y un Apple ID gratuito.
-        CODE_SIGN_IDENTITY: ""
-        CODE_SIGNING_REQUIRED: NO
-        CODE_SIGNING_ALLOWED: NO
+
+  TrajetLite:
+    type: application
+    platform: iOS
+    sources:
+      - path: Trajet/Shared
+      - path: Trajet/App
+        excludes: ["Info.plist", "Info-Lite.plist", "*.entitlements"]
+      - path: Trajet/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet
+        PRODUCT_NAME: Trajet
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Trajet/App/Info-Lite.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # Sin extension ni App Group: la app lo sabe tambien por esta bandera.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TRAJET_LITE"
+
+  TrajetWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Trajet/Shared
+      - path: TrajetWidgets
+        excludes: ["Info.plist", "*.entitlements"]
+      - path: Trajet/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet.widgets
+        PRODUCT_NAME: TrajetWidgets
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: TrajetWidgets/Info.plist
+        CODE_SIGN_ENTITLEMENTS: TrajetWidgets/TrajetWidgets.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TRAJET_WIDGETS"
+
+  TrajetTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TrajetTests
+    dependencies:
+      - target: Trajet
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet.tests
+
+  TrajetUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TrajetUITests
+    dependencies:
+      - target: Trajet
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.ismaeloul.trajet.uitests
+        TEST_TARGET_NAME: Trajet
+
+schemes:
+  Trajet:
+    build:
+      targets:
+        Trajet: all
+        TrajetWidgets: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - TrajetTests
+        - TrajetUITests
+  TrajetLite:
+    build:
+      targets:
+        TrajetLite: all
+    run:
+      config: Debug

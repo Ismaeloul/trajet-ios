@@ -68,9 +68,9 @@ enum Pace {
 
     var color: Color {
         switch self {
-        case .run: Palette.bad
-        case .walk: Palette.ink.opacity(0.75)
-        case .easy: Palette.inkFaint
+        case .run: Palette.badText   // el relleno rojo no pasa AA como texto
+        case .walk: Palette.ink2
+        case .easy: Palette.ink3
         }
     }
 
