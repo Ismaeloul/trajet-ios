@@ -19,7 +19,7 @@ struct EsqueletoView: View {
             Text("Trajet")
                 .font(.title.bold())
                 .foregroundStyle(Palette.ink)
-            Text("\(PreviewData.fiveLegBoard.legs.count) tramos de prueba")
+            Text("Esqueleto de la v2")
                 .foregroundStyle(Palette.ink2)
         }
         .padding()
