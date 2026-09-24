@@ -82,8 +82,9 @@ class Quota:
 - Día = día UTC (PRIM reinicia a medianoche UTC). Persistido en la tabla
   `quota_usage(day, endpoint, used, remaining_reported, key_id)`.
 - Niveles por el peor endpoint: `< 70 %` ok · `< 85 %` warn · `< 95 %`
-  critical · resto exhausted. En `exhausted` no se llama a PRIM: se sirve la
-  caché con su antigüedad (nunca pantalla vacía).
+  critical · resto exhausted. Degradación: warn ×2 el TTL, critical ×4,
+  exhausted como mucho una llamada cada 10 min por dato; con 0 restantes no
+  se llama y se sirve la caché con su antigüedad (nunca pantalla vacía).
 - El dato de la cabecera `x-ratelimit-remaining-day` manda si es más
   pesimista que el contador local.
 
@@ -115,7 +116,8 @@ class PrimClient:
 class PrimError(Exception):  kind: "no_key"|"invalid"|"forbidden"|"quota"|"unreachable"|"http"
 ```
 - `validate_key` hace **una** llamada barata por API (stop-monitoring de una
-  estación fija, general-message y navitia `coverage`), cuenta en la cuota
+  estación fija, general-message y navitia `places?count=1`; `/coverage` no
+  existe en PRIM), cuenta en la cuota
   y traduce: 401 → clave no válida; 403 → sin permiso para esa API; 429 →
   cuota agotada; 5xx/timeout → PRIM caído.
 

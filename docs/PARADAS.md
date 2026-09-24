@@ -78,3 +78,73 @@ aquí lo hecho, los resultados de los tests y los problemas, y sigo.
   está. Comando para hacerla tú en `docs/pendiente.md`.
 - No existe `scripts/publish.sh` en ningún sitio: se escribe nuevo en la
   FASE 1.
+
+---
+
+## Parada 2 — FASE 1: servidor (24-09-2026, 04:10)
+
+Todo en `Ismaeloul/trajet-server`, rama `rewrite-v2`. Nada desplegado en el
+Umbrel, nada publicado en `localhost:5000`, la app `ismaeloul-trajet` sin
+tocar.
+
+### Qué se hizo
+
+| pieza | resumen |
+|---|---|
+| Compatibilidad | `/api/*` de la 0.3.0 con el mismo `openapi.json` que producción (test que lo compara) y los mismos errores 502. Ahora solo acepta conexiones del proxy de Umbrel |
+| Migraciones | `PRAGMA user_version`; la 0.3.0 migra **sin perder rutas, historial ni andenes** (test con BD sintética del esquema exacto; el de la copia real espera a que la copies: `docs/pendiente.md`). Copia `.bak-v0` antes de migrar; si falla, modo degradado con el motivo en el panel |
+| API v1 | las 21 operaciones del contrato; token obligatorio; nunca un tablero hueco (errores con código: sin clave, clave rechazada, sin cuota, PRIM caído); ETag/304 y gzip |
+| Emparejamiento | QR de 5 min y un solo uso con las dos direcciones; token de 256 bits guardado como hash; comparación en tiempo constante; rate limit por IP y global; ver, renombrar y revocar dispositivos |
+| Seguridad | panel y `/api` detrás del login de Umbrel **y** solo desde el proxy (otra app de la red Docker recibe 403); anti-CSRF; CSP estricta; logs sin clave, tokens, códigos ni query strings |
+| Clave PRIM | se pega en el panel, se prueba contra PRIM antes de guardar, AES-256-GCM con clave derivada de `APP_SEED`, 0600; solo se ven los 4 últimos caracteres; reemplazo en caliente; prioridad panel > entorno y el panel dice de cuál sale |
+| Cuota | por endpoint y día UTC, persistida, en el panel y en `/api/v1/health`; degradación suave (TTL ×2/×4, mínimo 10 min, refresco sugerido a la app) sin pantalla vacía |
+| Mapa | `GET /api/v1/routes/{id}/map`: trazado recortado y simplificado (J Saint-Lazare → Argenteuil: 9 769 m, 52 puntos a 2 m, 12 a 20 m), paradas, andenes, vías, accesos, tiempo de transbordo; ~7 KB; pico de 3,4 MB |
+| Panel | «Cristal», móvil y escritorio, claro/oscuro; QR, dispositivos, clave, cuota, Ollama, colector, salud, errores, ajustes del QR. Capturas en `docs/capturas/panel/` |
+| Núcleo | acierto de la vía **por tren**; ruta que toca con franjas que cruzan medianoche; avisos con la fecha de París; SIRI con nulls no tumba el tablero; recolector sin SQLite en el bucle y quieto sin clave |
+| Empaquetado | Dockerfile multi-stage, usuario 1000, healthcheck sin curl, un worker; imagen 260 MB, ~65 MB de RSS en reposo; `scripts/publish.sh` (se lanza en el NAS; probado contra un registro efímero en este PC); CI en GitHub; README |
+| Store | `umbrel-app-store/ismaeloul-trajet` 0.4.0 en una rama **local** con el push bloqueado (whitelist `/api/v1/*`, `APP_SEED`, sin IPs; notas en español con el aviso de emparejar antes de actualizar) |
+
+### Tests
+
+- **618 tests en verde** (2 saltados: permisos POSIX en Windows —en CI sí
+  corren— y la migración contra la copia real, que no existe).
+- **Pruebas contra la API real** (aparte, `scripts/test-real.sh`, tope de
+  800 llamadas por endpoint y día): 9 en verde con unas 37 llamadas en total,
+  incluida la zona de la clave del panel de principio a fin (pegar una falsa
+  → rechazada; la real → validada y guardada; reemplazar; comprobar; borrar).
+  Las respuestas reales, recortadas y sin la clave, son nuevos casos del mock.
+- CI del servidor en GitHub: ruff, contrato, pytest, construcción y arranque
+  de la imagen.
+
+### Verificación independiente
+
+Tres verificadores (tests y reglas; seguridad con peticiones reales; funcionalidad
+y contrato frente al encargo). Encontraron **2 fallos altos** —el mismo, visto por
+dos: la API 0.3.0 no comprobaba de dónde venía la conexión— y **~14 medios o
+bajos** (ReDoS en el tachado de logs, un test que fallaba los sábados, 500 con
+nulls en rutas, tablero v1 que se daba por hueco con avisos, escritura de
+errores en el bucle de eventos, sin modo degradado si falla la migración…).
+**Todos corregidos**, cada uno con un test que falla antes y pasa después.
+Aceptado sin arreglar: un tercero en la red podría gastar el cupo de intentos
+del emparejamiento (molestia de 5 min, no roba nada).
+
+### Problemas y pendientes
+
+- **Incidente**: la clave de pruebas salió en la salida de un
+  `docker compose config` (solo en la transcripción; en ningún fichero).
+  **Rótala en PRIM.** Detalle en `docs/pendiente.md`.
+- La copia real de `trajet.db` sigue pendiente (permiso denegado en la sesión).
+- Publicar la 0.4.0 **después** de tener la app del iPhone emparejada: con
+  la 0.4.0 la web desaparece.
+
+### Re-verificación
+
+Un cuarto verificador reprodujo los 24 hallazgos contra el código corregido:
+**18 arreglados, 2 parciales y 4 que siguen** —los 4 aceptados o fuera de mi
+alcance: SEC-3 (depende de que umbreld sobrescriba `X-Forwarded-Host`, como
+dice su código fuente), SEC-4 (compromiso aceptado) y la migración contra la
+copia real (x2, espera a tu copia). Los 2 parciales (avisos del README y una
+frase de `servidor-v2.md`) y un fallo viejo que encontró de paso (un id mayor
+que 2^63−1 daba 500) quedaron arreglados después. **Sin regresiones.** Suite:
+**619 en verde**; ruff limpio; CI del servidor en verde.
+
